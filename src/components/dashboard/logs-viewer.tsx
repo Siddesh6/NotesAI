@@ -1,4 +1,3 @@
-
 'use client';
 
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -39,7 +38,7 @@ export function LogsViewer({ logs, activeStep }: LogsViewerProps) {
   const currentStepIndex = STEPS.indexOf(activeStep);
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[400px]">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[300px] lg:h-[400px]">
       {/* Visual Workflow */}
       <div className="lg:col-span-1 bg-white p-6 rounded-xl border border-border shadow-sm flex flex-col">
         <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-6 flex items-center">
@@ -71,9 +70,6 @@ export function LogsViewer({ logs, activeStep }: LogsViewerProps) {
                     {step.replace(/_/g, ' ')}
                   </p>
                 </div>
-                {idx < STEPS.length - 1 && (
-                  <div className="hidden group-last:hidden" />
-                )}
               </div>
             );
           })}
@@ -81,7 +77,7 @@ export function LogsViewer({ logs, activeStep }: LogsViewerProps) {
       </div>
 
       {/* Terminal Logs */}
-      <div className="lg:col-span-2 bg-slate-950 text-slate-300 p-4 rounded-xl shadow-lg font-mono text-xs flex flex-col">
+      <div className="lg:col-span-2 bg-slate-950 text-slate-300 p-4 rounded-xl shadow-lg font-mono text-xs flex flex-col min-h-[300px]">
         <div className="flex items-center justify-between mb-3 px-2 border-b border-slate-800 pb-2">
           <span className="flex items-center text-slate-500">
             <div className="flex space-x-1.5 mr-4">
@@ -94,7 +90,7 @@ export function LogsViewer({ logs, activeStep }: LogsViewerProps) {
           <span className="text-slate-500">{new Date().toLocaleDateString()}</span>
         </div>
         <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-2">
+          <div className="space-y-2 pb-4">
             {logs.length === 0 ? (
               <p className="text-slate-600 animate-pulse italic">Waiting for process initiation...</p>
             ) : (

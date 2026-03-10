@@ -343,8 +343,8 @@ export default function Dashboard() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-secondary/5">
-          <div className="max-w-7xl mx-auto space-y-8">
+        <div className="flex-1 overflow-y-auto p-8 space-y-12 bg-secondary/5">
+          <div className="max-w-7xl mx-auto space-y-12">
             
             {/* Input Section */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
@@ -434,7 +434,7 @@ export default function Dashboard() {
 
             {/* Workflow Visualization */}
             {(isProcessing || activeStep === 'RUN_COMPLETE') && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="space-y-6 animate-in fade-in duration-500 relative z-20">
                 <div className="flex items-center justify-between">
                    <h3 className="text-xl font-bold text-primary">Execution Pipeline</h3>
                    <span className="text-xs font-mono text-muted-foreground">RUN_ID: {currentRunId?.slice(0, 8)}</span>
@@ -445,7 +445,7 @@ export default function Dashboard() {
 
             {/* Metrics Dashboard */}
             {tasks.length > 0 && (
-              <div className="space-y-6">
+              <div className="space-y-6 relative z-10">
                 <h3 className="text-xl font-bold text-primary">Analytics Dashboard</h3>
                 <MetricsPanel tasks={tasks} />
               </div>
