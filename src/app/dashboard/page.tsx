@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { useAuth, useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, doc, query, orderBy, setDoc } from 'firebase/firestore';
+import { useAuth, useFirestore, useUser, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { collection, doc, query, orderBy } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -43,7 +43,7 @@ export default function Dashboard() {
   const [activeStep, setActiveStep] = useState('');
   const [currentRunId, setCurrentRunId] = useState<string | null>(null);
 
-  // Firestore Data Subscriptions
+  // Firestore Data Subscriptions - Scoped to User UID for strict isolation
   const tasksQuery = useMemoFirebase(() => {
     if (!db || !user?.uid) return null;
     return query(collection(db, 'users', user.uid, 'tasks'), orderBy('createdAt', 'desc'));
@@ -71,7 +71,7 @@ export default function Dashboard() {
     const logId = crypto.randomUUID();
     const logRef = doc(db, 'users', user.uid, 'runs', runId, 'logEvents', logId);
     
-    setDoc(logRef, {
+    setDocumentNonBlocking(logRef, {
       id: logId,
       runId,
       userId: user.uid,
@@ -122,15 +122,27 @@ export default function Dashboard() {
 
     setIsProcessing(true);
     const runId = crypto.randomUUID();
+    const transcriptId = crypto.randomUUID();
     setCurrentRunId(runId);
     
+    // 1. Store Transcript first (for history)
+    const transcriptRef = doc(db, 'users', user.uid, 'transcripts', transcriptId);
+    setDocumentNonBlocking(transcriptRef, {
+      id: transcriptId,
+      userId: user.uid,
+      content: transcript,
+      submittedAt: new Date().toISOString(),
+      title: transcript.slice(0, 50) + '...'
+    });
+
+    // 2. Initialize Run
     const runRef = doc(db, 'users', user.uid, 'runs', runId);
-    await setDoc(runRef, {
+    setDocumentNonBlocking(runRef, {
       id: runId,
       userId: user.uid,
+      transcriptId: transcriptId,
       startedAt: new Date().toISOString(),
-      status: 'PENDING',
-      transcript
+      status: 'PENDING'
     });
 
     const STEPS = ["INPUT_RECEIVED", "PARSING_TRANSCRIPT", "TASK_EXTRACTION", "ENTITY_DETECTION", "PRIORITY_SCORING", "RUN_COMPLETE"];
@@ -157,10 +169,10 @@ export default function Dashboard() {
         data.tasks.forEach((task: any) => {
           const taskId = crypto.randomUUID();
           const taskRef = doc(db, 'users', user?.uid!, 'tasks', taskId);
-          setDoc(taskRef, {
+          setDocumentNonBlocking(taskRef, {
             id: taskId,
             userId: user?.uid!,
-            transcriptId: runId,
+            transcriptId: transcriptId,
             description: task.task_description || 'No description',
             owner: task.owner || 'Unassigned',
             deadline: task.deadline || '',
@@ -177,11 +189,11 @@ export default function Dashboard() {
       setActiveStep('RUN_COMPLETE');
       createLog(runId, 'INFO', `Run completed successfully. Extracted ${data.tasks?.length || 0} tasks.`);
       
-      await setDoc(runRef, {
+      updateDocumentNonBlocking(runRef, {
         completedAt: new Date().toISOString(),
         status: 'COMPLETED',
         totalTasksExtracted: data.tasks?.length || 0
-      }, { merge: true });
+      });
 
       toast({
         title: "Extraction Complete",
@@ -189,6 +201,11 @@ export default function Dashboard() {
       });
     } catch (err: any) {
       createLog(runId, 'ERROR', `Run failed: ${err.message}`);
+      updateDocumentNonBlocking(runRef, {
+        completedAt: new Date().toISOString(),
+        status: 'FAILED',
+        errorDetails: err.message
+      });
       toast({
         title: "Error",
         description: "Something went wrong during extraction.",
@@ -245,7 +262,6 @@ export default function Dashboard() {
       try {
         await navigator.share(shareData);
       } catch (err: any) {
-        // Fallback if sharing is cancelled or fails
         if (err.name !== 'AbortError') {
           navigator.clipboard.writeText(window.location.href);
           toast({ title: "Link Copied", description: "Sharing failed. Link copied to clipboard instead." });

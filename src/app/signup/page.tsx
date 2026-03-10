@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useState } from 'react';
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -31,13 +30,14 @@ export default function SignupPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Create user profile in Firestore
-      await setDoc(doc(db, 'users', user.uid), {
+      // Create user profile in Firestore using non-blocking pattern
+      const userRef = doc(db, 'users', user.uid);
+      setDocumentNonBlocking(userRef, {
         id: user.uid,
         email: user.email,
         displayName,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       });
 
       router.push('/dashboard');
