@@ -50,14 +50,16 @@ export default function Dashboard() {
     return query(collection(db, 'users', user.uid, 'tasks'), orderBy('createdAt', 'desc'));
   }, [db, user?.uid]);
   
-  const { data: tasks = [] } = useCollection(tasksQuery);
+  const { data: tasksData } = useCollection(tasksQuery);
+  const tasks = useMemo(() => tasksData || [], [tasksData]);
 
   const logsQuery = useMemoFirebase(() => {
     if (!db || !user?.uid || !currentRunId) return null;
     return query(collection(db, 'users', user.uid, 'runs', currentRunId, 'logEvents'), orderBy('timestamp', 'asc'));
   }, [db, user?.uid, currentRunId]);
 
-  const { data: logs = [] } = useCollection(logsQuery);
+  const { data: logsData } = useCollection(logsQuery);
+  const logs = useMemo(() => logsData || [], [logsData]);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -356,7 +358,7 @@ export default function Dashboard() {
             </div>
 
             {/* Workflow Visualization */}
-            {isProcessing || activeStep === 'RUN_COMPLETE' ? (
+            {(isProcessing || activeStep === 'RUN_COMPLETE') && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <div className="flex items-center justify-between">
                    <h3 className="text-xl font-bold text-primary">Execution Pipeline</h3>
@@ -364,7 +366,7 @@ export default function Dashboard() {
                 </div>
                 <LogsViewer logs={logs} activeStep={activeStep} />
               </div>
-            ) : null}
+            )}
 
             {/* Metrics Dashboard */}
             {tasks.length > 0 && (
