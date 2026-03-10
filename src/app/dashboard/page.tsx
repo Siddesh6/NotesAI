@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useAuth, useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, doc, query, orderBy, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, doc, query, orderBy, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,12 +13,10 @@ import {
   Clock, 
   ClipboardList, 
   Download, 
-  FileText,
   Plus,
-  ArrowUpRight,
-  Share2,
   ChevronRight,
-  Loader2
+  Loader2,
+  Share2
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -27,7 +25,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
 import { TaskTable } from '@/components/dashboard/task-table';
 import { MetricsPanel } from '@/components/dashboard/metrics-panel';
 import { LogsViewer } from '@/components/dashboard/logs-viewer';
@@ -68,16 +65,18 @@ export default function Dashboard() {
   }, [user, isUserLoading, router]);
 
   const createLog = (runId: string, type: string, message: string, details?: string) => {
-    if (!user?.uid) return;
+    if (!user?.uid || !db) return;
     const logId = crypto.randomUUID();
     const logRef = doc(db, 'users', user.uid, 'runs', runId, 'logEvents', logId);
+    
+    // Firestore does not support 'undefined' values. Use null or omit the field.
     setDoc(logRef, {
       id: logId,
       runId,
       userId: user.uid,
       eventType: type,
       message,
-      details,
+      details: details ?? null,
       timestamp: new Date().toISOString()
     });
   };
@@ -92,7 +91,7 @@ export default function Dashboard() {
       return;
     }
 
-    if (!user?.uid) return;
+    if (!user?.uid || !db) return;
 
     setIsProcessing(true);
     const runId = crypto.randomUUID();
@@ -129,37 +128,39 @@ export default function Dashboard() {
       const data = await response.json();
       
       // Save results to Firestore
-      data.tasks.forEach((task: any) => {
-        const taskId = crypto.randomUUID();
-        const taskRef = doc(db, 'users', user?.uid!, 'tasks', taskId);
-        setDoc(taskRef, {
-          id: taskId,
-          userId: user?.uid!,
-          transcriptId: runId,
-          description: task.task_description,
-          owner: task.owner,
-          deadline: task.deadline || '',
-          priority: task.priority,
-          priorityScore: task.priority_score,
-          confidenceScore: task.confidence_score,
-          status: 'pending',
-          sourceSentence: task.task_description,
-          createdAt: new Date().toISOString()
+      if (data.tasks && Array.isArray(data.tasks)) {
+        data.tasks.forEach((task: any) => {
+          const taskId = crypto.randomUUID();
+          const taskRef = doc(db, 'users', user?.uid!, 'tasks', taskId);
+          setDoc(taskRef, {
+            id: taskId,
+            userId: user?.uid!,
+            transcriptId: runId,
+            description: task.task_description || 'No description',
+            owner: task.owner || 'Unassigned',
+            deadline: task.deadline || '',
+            priority: task.priority || 'LOW',
+            priorityScore: task.priority_score ?? 0,
+            confidenceScore: task.confidence_score ?? 0,
+            status: 'pending',
+            sourceSentence: task.task_description || '',
+            createdAt: new Date().toISOString()
+          });
         });
-      });
+      }
 
       setActiveStep('RUN_COMPLETE');
-      createLog(runId, 'INFO', `Run completed successfully. Extracted ${data.tasks.length} tasks.`);
+      createLog(runId, 'INFO', `Run completed successfully. Extracted ${data.tasks?.length || 0} tasks.`);
       
       await setDoc(runRef, {
         completedAt: new Date().toISOString(),
         status: 'COMPLETED',
-        totalTasksExtracted: data.tasks.length
+        totalTasksExtracted: data.tasks?.length || 0
       }, { merge: true });
 
       toast({
         title: "Extraction Complete",
-        description: `Successfully extracted ${data.tasks.length} tasks.`,
+        description: `Successfully extracted ${data.tasks?.length || 0} tasks.`,
       });
     } catch (err: any) {
       createLog(runId, 'ERROR', `Run failed: ${err.message}`);
@@ -178,7 +179,7 @@ export default function Dashboard() {
   };
 
   const handleSignOut = () => {
-    auth.signOut();
+    auth?.signOut();
     router.push('/');
   };
 
@@ -385,7 +386,7 @@ export default function Dashboard() {
                    <span>Updated {new Date().toLocaleTimeString()}</span>
                 </div>
               </div>
-              <TaskTable tasks={tasks as any} db={db} userId={user?.uid || ''} />
+              <TaskTable tasks={tasks as any} db={db!} userId={user?.uid || ''} />
             </div>
           </div>
         </div>
