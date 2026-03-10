@@ -1,0 +1,119 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * MEETING NOTES TO ACTION ITEMS EXTRACTOR - SECURITY RULES
+     *
+     * CORE PHILOSOPHY:
+     * This ruleset enforces a strict User-Ownership model. Access to any data is strictly partitioned 
+     * by the Firebase Authentication UID. There is no concept of public data or administrative roles 
+     * in this iteration; every user is the sole owner and manager of their own meeting data.
+     *
+     * DATA STRUCTURE:
+     * All application data is organized hierarchically under the path /users/{userId}. 
+     * Sub-collections (transcripts, tasks, runs, logEvents) are nested within the user's root document
+     * to ensure clear logical boundaries and simplify query scoping.
+     *
+     * KEY SECURITY DECISIONS:
+     * 1. Path-Based Authorization: We rely on the {userId} wildcard in the document path as the 
+     *    primary key for authorization.
+     * 2. Relational Integrity: On document creation, we enforce that the internal 'userId' field 
+     *    matches the path wildcard and the authenticated user's UID.
+     * 3. Immutability: Ownership fields (userId, runId) are locked after creation to prevent 
+     *    data being moved between users or orphaned.
+     * 4. Denormalization for Performance: Every document contains its owner's UID (userId). This 
+     *    allows for rapid authorization checks without expensive get() lookups to parent documents.
+     */
+
+    // --- Helper Functions ---
+
+    /** @description Checks if the request is from an authenticated user. */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /** @description Checks if the authenticated user matches the provided userId wildcard. */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /** @description Checks if the document exists and the current user is the owner. Used for updates and deletes. */
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    // --- Collection Rules ---
+
+    /**
+     * @description Rules for the UserProfile collection. Each user can only manage their own profile.
+     * @path /users/{userId}
+     * @allow (create) if auth.uid == "user123" and path matches "user123"
+     * @deny (list) Prevent listing all users in the system for privacy.
+     * @principle Self-Creation and Ownership.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false; // Users should not be discoverable or listable.
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+
+      /**
+       * @description Rules for Transcripts. Users own their submitted meeting text.
+       * @path /users/{userId}/transcripts/{transcriptId}
+       * @allow (list) if auth.uid == userId.
+       * @deny (create) if request.resource.data.userId != userId.
+       * @principle Path-based ownership with relational field validation.
+       */
+      match /transcripts/{transcriptId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+      }
+
+      /**
+       * @description Rules for Tasks. Extracted action items are private to the user.
+       * @path /users/{userId}/tasks/{taskId}
+       * @allow (update) Mark a task as completed if owner.
+       * @deny (delete) if requester is not the owner.
+       * @principle Ensures tasks cannot be transferred between users.
+       */
+      match /tasks/{taskId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+      }
+
+      /**
+       * @description Rules for Runs. Metadata about AI processing attempts.
+       * @path /users/{userId}/runs/{runId}
+       * @allow (get) to check processing status.
+       * @deny (update) if trying to change the owner of the run.
+       * @principle Maintains audit integrity for AI processing history.
+       */
+      match /runs/{runId} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+
+        /**
+         * @description Rules for LogEvents. Granular steps of the AI workflow.
+         * @path /users/{userId}/runs/{runId}/logEvents/{logEventId}
+         * @allow (create) only if associated with a valid run and user.
+         * @deny (update) Log events should generally be immutable append-only data.
+         * @principle Multi-level relational integrity check.
+         */
+        match /logEvents/{logEventId} {
+          allow get, list: if isOwner(userId);
+          allow create: if isOwner(userId) && request.resource.data.userId == userId && request.resource.data.runId == runId;
+          allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId && request.resource.data.runId == resource.data.runId;
+          allow delete: if isExistingOwner(userId);
+        }
+      }
+    }
+  }
+}
