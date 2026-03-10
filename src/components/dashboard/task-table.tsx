@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -19,8 +18,9 @@ import {
   MoreVertical,
   User,
   Calendar,
-  ExternalLink,
-  ChevronDown
+  Share2,
+  Download,
+  ExternalLink
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -31,6 +31,7 @@ import {
 import { cn } from '@/lib/utils';
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { doc, Firestore } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 interface Task {
   id: string;
@@ -51,6 +52,8 @@ interface TaskTableProps {
 }
 
 export function TaskTable({ tasks, db, userId }: TaskTableProps) {
+  const { toast } = useToast();
+
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'HIGH': return 'bg-red-100 text-red-700 border-red-200';
@@ -71,6 +74,23 @@ export function TaskTable({ tasks, db, userId }: TaskTableProps) {
   const handleDelete = (taskId: string) => {
     const taskRef = doc(db, 'users', userId, 'tasks', taskId);
     deleteDocumentNonBlocking(taskRef);
+    toast({ title: "Task Deleted", description: "The task has been removed from your repository." });
+  };
+
+  const handleExportSingle = (task: Task, format: 'json' | 'csv') => {
+    let content = "";
+    if (format === 'json') {
+      content = JSON.stringify(task, null, 2);
+    } else {
+      content = "Description,Owner,Deadline,Priority,Status\n";
+      content += `"${task.description}","${task.owner}","${task.deadline || ''}","${task.priority}","${task.status}"`;
+    }
+    const blob = new Blob([content], { type: format === 'json' ? 'application/json' : 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `task-${task.id.slice(0, 5)}.${format}`;
+    a.click();
   };
 
   if (tasks.length === 0) {
@@ -80,7 +100,7 @@ export function TaskTable({ tasks, db, userId }: TaskTableProps) {
           <Calendar className="h-8 w-8 text-primary/40" />
         </div>
         <p className="font-medium">No tasks found</p>
-        <p className="text-sm">Run an extraction to populate this list</p>
+        <p className="text-sm">Run an extraction or upload a file to populate this list</p>
       </div>
     );
   }
@@ -151,10 +171,28 @@ export function TaskTable({ tasks, db, userId }: TaskTableProps) {
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-40">
+                  <DropdownMenuContent align="end" className="w-48">
                     <DropdownMenuItem className="cursor-pointer">
                       <Edit2 className="mr-2 h-4 w-4" />
                       Edit Task
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      className="cursor-pointer" 
+                      onClick={() => {
+                        navigator.clipboard.writeText(`Task: ${task.description}\nOwner: ${task.owner}\nPriority: ${task.priority}`);
+                        toast({ title: "Task Details Copied" });
+                      }}
+                    >
+                      <Share2 className="mr-2 h-4 w-4" />
+                      Share Task
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => handleExportSingle(task, 'csv')}>
+                      <Download className="mr-2 h-4 w-4" />
+                      Export to CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => toast({ title: "Connecting...", description: "Jira integration setup required." })}>
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      Send to Jira
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                       className="cursor-pointer text-destructive focus:text-destructive"

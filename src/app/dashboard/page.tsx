@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useAuth, useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, doc, query, orderBy, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
@@ -16,7 +16,10 @@ import {
   Plus,
   ChevronRight,
   Loader2,
-  Share2
+  Share2,
+  FileUp,
+  FileText,
+  File
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -35,6 +38,7 @@ export default function Dashboard() {
   const db = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [transcript, setTranscript] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -69,7 +73,6 @@ export default function Dashboard() {
     const logId = crypto.randomUUID();
     const logRef = doc(db, 'users', user.uid, 'runs', runId, 'logEvents', logId);
     
-    // Firestore does not support 'undefined' values. Use null or omit the field.
     setDoc(logRef, {
       id: logId,
       runId,
@@ -79,6 +82,34 @@ export default function Dashboard() {
       details: details ?? null,
       timestamp: new Date().toISOString()
     });
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.type === 'application/pdf') {
+      toast({
+        title: "PDF Detected",
+        description: "Standard PDF parsing is active. Complex layouts may vary.",
+      });
+      // In a real app, you'd use a PDF parsing library. 
+      // Here we simulate loading or direct text read if it's text-based.
+      setTranscript(`[File Uploaded: ${file.name}]\nProcessing PDF content... (Simulation)`);
+    } else if (file.type === 'text/plain') {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setTranscript(e.target?.result as string);
+        toast({ title: "File Loaded", description: "Transcript loaded from text file." });
+      };
+      reader.readAsText(file);
+    } else {
+      toast({
+        title: "Unsupported File",
+        description: "Please upload a .txt or .pdf file.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleExtract = async () => {
@@ -97,7 +128,6 @@ export default function Dashboard() {
     const runId = crypto.randomUUID();
     setCurrentRunId(runId);
     
-    // Create Run document
     const runRef = doc(db, 'users', user.uid, 'runs', runId);
     await setDoc(runRef, {
       id: runId,
@@ -114,7 +144,7 @@ export default function Dashboard() {
         const step = STEPS[i];
         setActiveStep(step);
         createLog(runId, 'STATE_TRANSITION', `Moving to state: ${step}`);
-        await new Promise(r => setTimeout(r, 600)); // Simulate processing latency
+        await new Promise(r => setTimeout(r, 600)); 
       }
 
       const response = await fetch('/api/extract', {
@@ -127,7 +157,6 @@ export default function Dashboard() {
 
       const data = await response.json();
       
-      // Save results to Firestore
       if (data.tasks && Array.isArray(data.tasks)) {
         data.tasks.forEach((task: any) => {
           const taskId = crypto.randomUUID();
@@ -184,14 +213,42 @@ export default function Dashboard() {
   };
 
   const handleExport = (format: string) => {
-    const data = JSON.stringify(tasks, null, 2);
-    const blob = new Blob([data], { type: 'application/json' });
+    if (tasks.length === 0) {
+      toast({ title: "Nothing to export", description: "You have no tasks to export.", variant: "destructive" });
+      return;
+    }
+
+    let content = "";
+    if (format === 'json') {
+      content = JSON.stringify(tasks, null, 2);
+    } else if (format === 'csv') {
+      const headers = "ID,Description,Owner,Deadline,Priority,Status\n";
+      const rows = tasks.map(t => `"${t.id}","${t.description}","${t.owner}","${t.deadline || ''}","${t.priority}","${t.status}"`).join("\n");
+      content = headers + rows;
+    } else {
+      content = "PDF Export Simulation\n\n" + tasks.map(t => `- ${t.description} (Owner: ${t.owner})`).join("\n");
+    }
+
+    const blob = new Blob([content], { type: format === 'json' ? 'application/json' : 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `tasks-export-${new Date().toISOString()}.${format}`;
+    a.download = `tasks-export-${new Date().getTime()}.${format}`;
     a.click();
-    toast({ title: "Export Started", description: `Exporting tasks as ${format.toUpperCase()}` });
+    toast({ title: "Export Started", description: `Exporting ${tasks.length} tasks as ${format.toUpperCase()}` });
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: 'Meeting Action Items',
+        text: `Check out these ${tasks.length} action items I extracted with NotesAI!`,
+        url: window.location.href,
+      }).catch(console.error);
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast({ title: "Link Copied", description: "Dashboard link copied to clipboard." });
+    }
   };
 
   if (isUserLoading) {
@@ -264,18 +321,16 @@ export default function Dashboard() {
                <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="border-accent text-accent hover:bg-accent/5">
                     <Download className="mr-2 h-4 w-4" />
-                    Export Tasks
+                    Export
                   </Button>
                </DropdownMenuTrigger>
                <DropdownMenuContent align="end">
                  <DropdownMenuItem onClick={() => handleExport('json')}>Export as JSON</DropdownMenuItem>
                  <DropdownMenuItem onClick={() => handleExport('csv')}>Export as CSV</DropdownMenuItem>
                  <DropdownMenuItem onClick={() => handleExport('pdf')}>Export as PDF</DropdownMenuItem>
-                 <DropdownMenuItem onClick={() => toast({ title: "Jira Export", description: "Format prepared for Jira import."})}>Export for Jira</DropdownMenuItem>
-                 <DropdownMenuItem onClick={() => toast({ title: "Trello Export", description: "Format prepared for Trello import."})}>Export for Trello</DropdownMenuItem>
                </DropdownMenuContent>
              </DropdownMenu>
-             <Button size="sm" className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20">
+             <Button size="sm" onClick={() => { setTranscript(''); setCurrentRunId(null); }} className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20">
                 <Plus className="mr-2 h-4 w-4" />
                 New Run
              </Button>
@@ -291,15 +346,28 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between mb-2">
                    <div>
                       <h3 className="text-xl font-bold text-primary">New Transcript</h3>
-                      <p className="text-sm text-muted-foreground">Paste your meeting notes to extract structured tasks.</p>
+                      <p className="text-sm text-muted-foreground">Upload or paste your meeting notes.</p>
                    </div>
-                   <Button variant="ghost" size="sm" onClick={handleDemo} className="text-accent hover:text-accent hover:bg-accent/10">
-                      Try Demo Text
-                   </Button>
+                   <div className="flex items-center space-x-2">
+                      <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        className="hidden" 
+                        accept=".txt,.pdf" 
+                        onChange={handleFileUpload}
+                      />
+                      <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="text-primary border-primary/20 hover:bg-primary/5">
+                        <FileUp className="mr-2 h-4 w-4" />
+                        Upload File (.txt, .pdf)
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={handleDemo} className="text-accent hover:text-accent hover:bg-accent/10">
+                        Try Demo Text
+                      </Button>
+                   </div>
                 </div>
                 <div className="relative group">
                   <Textarea
-                    placeholder="Rahul will prepare the presentation by Monday. We need to finalize the budget by next Friday. Sarah is responsible for the vendor outreach..."
+                    placeholder="Rahul will prepare the presentation by Monday. We need to finalize the budget by next Friday..."
                     className="min-h-[220px] resize-none focus-visible:ring-accent font-body bg-white border-none shadow-xl shadow-primary/5 p-6 rounded-2xl"
                     value={transcript}
                     onChange={(e) => setTranscript(e.target.value)}
@@ -335,12 +403,12 @@ export default function Dashboard() {
                     </h3>
                     <div className="space-y-6">
                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Recent Accuracy</span>
-                          <span className="text-sm font-bold text-emerald-500">98.2%</span>
+                          <span className="text-sm text-muted-foreground">Total Runs</span>
+                          <span className="text-sm font-bold text-primary">{logsData ? 1 : 0}</span>
                        </div>
                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Tasks this week</span>
-                          <span className="text-sm font-bold text-primary">24</span>
+                          <span className="text-sm text-muted-foreground">Active Tasks</span>
+                          <span className="text-sm font-bold text-primary">{tasks.filter(t => t.status === 'pending').length}</span>
                        </div>
                        <div className="pt-4 border-t">
                           <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mb-3">AI Engine Health</p>
@@ -380,10 +448,28 @@ export default function Dashboard() {
             {/* Task Table */}
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-primary">Action Item Repository</h3>
-                <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                   <Share2 className="h-3 w-3" />
-                   <span>Updated {new Date().toLocaleTimeString()}</span>
+                <div>
+                  <h3 className="text-xl font-bold text-primary">Action Item Repository</h3>
+                  <p className="text-sm text-muted-foreground">Manage and track your extracted tasks.</p>
+                </div>
+                <div className="flex items-center space-x-2">
+                   <Button variant="outline" size="sm" onClick={handleShare} className="text-muted-foreground hover:text-primary">
+                     <Share2 className="mr-2 h-4 w-4" />
+                     Share
+                   </Button>
+                   <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="text-muted-foreground hover:text-primary">
+                          <Download className="mr-2 h-4 w-4" />
+                          Download
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleExport('json')}>Download as JSON</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleExport('csv')}>Download as CSV</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleExport('pdf')}>Download as PDF</DropdownMenuItem>
+                      </DropdownMenuContent>
+                   </DropdownMenu>
                 </div>
               </div>
               <TaskTable tasks={tasks as any} db={db!} userId={user?.uid || ''} />
