@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -17,14 +16,21 @@ import {
   FileText,
   Plus,
   ArrowUpRight,
-  Share2
+  Share2,
+  ChevronRight,
+  Loader2
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { TaskTable } from '@/components/dashboard/task-table';
 import { MetricsPanel } from '@/components/dashboard/metrics-panel';
 import { LogsViewer } from '@/components/dashboard/logs-viewer';
-import { addDocumentNonBlocking } from '@/firebase';
 
 export default function Dashboard() {
   const { user, isUserLoading } = useUser();
