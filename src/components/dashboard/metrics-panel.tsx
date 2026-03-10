@@ -9,14 +9,13 @@ import {
   XAxis, 
   YAxis, 
   CartesianGrid, 
-  Tooltip, 
   ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
   Legend
 } from 'recharts';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
 
 interface Task {
   priority: 'HIGH' | 'MEDIUM' | 'LOW';
@@ -28,23 +27,57 @@ interface MetricsPanelProps {
   tasks: Task[];
 }
 
+const priorityConfig = {
+  high: {
+    label: "High",
+    color: "hsl(var(--destructive))",
+  },
+  medium: {
+    label: "Medium",
+    color: "hsl(var(--accent))",
+  },
+  low: {
+    label: "Low",
+    color: "hsl(var(--chart-3))",
+  },
+} satisfies ChartConfig;
+
+const completionConfig = {
+  completed: {
+    label: "Completed",
+    color: "hsl(var(--chart-3))",
+  },
+  pending: {
+    label: "Pending",
+    color: "hsl(var(--muted-foreground))",
+  },
+} satisfies ChartConfig;
+
 export function MetricsPanel({ tasks }: MetricsPanelProps) {
   const priorityData = useMemo(() => {
     const counts = { HIGH: 0, MEDIUM: 0, LOW: 0 };
-    tasks.forEach(t => counts[t.priority]++);
+    tasks.forEach(t => {
+      if (counts[t.priority] !== undefined) {
+        counts[t.priority]++;
+      }
+    });
     return [
-      { name: 'High', value: counts.HIGH, color: 'hsl(var(--destructive))' },
-      { name: 'Medium', value: counts.MEDIUM, color: 'hsl(var(--accent))' },
-      { name: 'Low', value: counts.LOW, color: 'hsl(var(--chart-3))' },
+      { priority: 'high', label: 'High', value: counts.HIGH, fill: "var(--color-high)" },
+      { priority: 'medium', label: 'Medium', value: counts.MEDIUM, fill: "var(--color-medium)" },
+      { priority: 'low', label: 'Low', value: counts.LOW, fill: "var(--color-low)" },
     ];
   }, [tasks]);
 
   const completionData = useMemo(() => {
     const counts = { completed: 0, pending: 0 };
-    tasks.forEach(t => counts[t.status]++);
+    tasks.forEach(t => {
+      if (counts[t.status] !== undefined) {
+        counts[t.status]++;
+      }
+    });
     return [
-      { name: 'Completed', value: counts.completed, fill: 'hsl(var(--chart-3))' },
-      { name: 'Pending', value: counts.pending, fill: 'hsl(var(--muted-foreground))' },
+      { status: 'completed', value: counts.completed, fill: "var(--color-completed)" },
+      { status: 'pending', value: counts.pending, fill: "var(--color-pending)" },
     ];
   }, [tasks]);
 
@@ -62,19 +95,19 @@ export function MetricsPanel({ tasks }: MetricsPanelProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="h-[200px]">
-          <ResponsiveContainer width="100%" height="100%">
+          <ChartContainer config={priorityConfig}>
             <BarChart data={priorityData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-              <XAxis dataKey="name" axisLine={false} tickLine={false} />
+              <XAxis 
+                dataKey="label" 
+                axisLine={false} 
+                tickLine={false} 
+              />
               <YAxis hide />
-              <Tooltip cursor={{ fill: 'transparent' }} content={<ChartTooltipContent />} />
-              <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                {priorityData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Bar>
+              <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+              <Bar dataKey="value" radius={[4, 4, 0, 0]} />
             </BarChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </CardContent>
       </Card>
 
@@ -85,7 +118,7 @@ export function MetricsPanel({ tasks }: MetricsPanelProps) {
           </CardTitle>
         </CardHeader>
         <CardContent className="h-[200px] flex items-center justify-center">
-          <ResponsiveContainer width="100%" height="100%">
+          <ChartContainer config={completionConfig}>
             <PieChart>
               <Pie
                 data={completionData}
@@ -95,15 +128,12 @@ export function MetricsPanel({ tasks }: MetricsPanelProps) {
                 outerRadius={80}
                 paddingAngle={5}
                 dataKey="value"
-              >
-                {completionData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
-                ))}
-              </Pie>
-              <Tooltip content={<ChartTooltipContent />} />
+                nameKey="status"
+              />
+              <ChartTooltip content={<ChartTooltipContent hideLabel />} />
               <Legend verticalAlign="bottom" height={36} />
             </PieChart>
-          </ResponsiveContainer>
+          </ChartContainer>
         </CardContent>
       </Card>
 
