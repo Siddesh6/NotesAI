@@ -1,4 +1,3 @@
-
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -139,7 +138,7 @@ export default function LandingPage() {
             <div className="space-y-4">
               <h4 className="text-sm font-bold uppercase tracking-wider text-primary">Created By</h4>
               <div className="flex flex-col space-y-2">
-                <span className="text-sm font-bold text-foreground">Siddesh B</span>
+                <span className="text-sm font-bold text-foreground">Developer</span>
                 <p className="text-xs text-muted-foreground">Building the future of meeting productivity.</p>
                 <div className="flex space-x-4 pt-2">
                   <Link href="mailto:siddeshb.contact@gmail.com" className="text-muted-foreground hover:text-primary transition-colors">

@@ -1,4 +1,3 @@
-
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Zap, Cpu } from 'lucide-react';
@@ -65,14 +64,14 @@ export default function TermsOfService() {
           <div>
             <h2 className="text-xl font-bold mb-2">5. Data Ownership & Intellectual Property</h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              You retain all rights to the transcripts and data you upload. NotesAI and its developer, Siddesh B, own the underlying technology, branding, and proprietary algorithms associated with the Service.
+              You retain all rights to the transcripts and data you upload. NotesAI and its Developer own the underlying technology, branding, and proprietary algorithms associated with the Service.
             </p>
           </div>
 
           <div>
             <h2 className="text-xl font-bold mb-2">6. Limitation of Liability</h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              In no event shall NotesAI or its creator, Siddesh B, be liable for any indirect, incidental, special, or consequential damages resulting from the use or inability to use the Service, including reliance on automated AI outputs.
+              In no event shall NotesAI or its Developer be liable for any indirect, incidental, special, or consequential damages resulting from the use or inability to use the Service, including reliance on automated AI outputs.
             </p>
           </div>
 
@@ -87,7 +86,7 @@ export default function TermsOfService() {
         <div className="mt-12 pt-8 border-t text-center">
           <p className="text-sm text-muted-foreground mb-4">Questions about our Terms?</p>
           <Button asChild variant="outline" className="border-primary/20 hover:bg-primary/5">
-            <Link href="mailto:siddeshb.contact@gmail.com">Contact Siddesh B</Link>
+            <Link href="mailto:siddeshb.contact@gmail.com">Contact Developer</Link>
           </Button>
         </div>
       </div>

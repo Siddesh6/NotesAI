@@ -1,4 +1,3 @@
-
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Zap, Shield, Cpu } from 'lucide-react';
@@ -81,7 +80,7 @@ export default function PrivacyPolicy() {
           <div>
             <h2 className="text-xl font-bold mb-2">6. Contact & Data Controller</h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              For any privacy-related inquiries, please contact the developer and data controller, Siddesh B, at <Link href="mailto:siddeshb.contact@gmail.com" className="text-primary font-medium">siddeshb.contact@gmail.com</Link>.
+              For any privacy-related inquiries, please contact the developer and data controller at <Link href="mailto:siddeshb.contact@gmail.com" className="text-primary font-medium">siddeshb.contact@gmail.com</Link>.
             </p>
           </div>
         </section>
@@ -89,7 +88,7 @@ export default function PrivacyPolicy() {
         <div className="mt-12 pt-8 border-t text-center">
           <p className="text-sm text-muted-foreground mb-4">Privacy concerns?</p>
           <Button asChild className="bg-primary hover:bg-primary/90">
-            <Link href="mailto:siddeshb.contact@gmail.com">Email Siddesh B</Link>
+            <Link href="mailto:siddeshb.contact@gmail.com">Email Developer</Link>
           </Button>
         </div>
       </div>
