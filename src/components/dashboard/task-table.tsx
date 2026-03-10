@@ -21,7 +21,8 @@ import {
   Share2,
   Download,
   ExternalLink,
-  ClipboardCheck
+  ClipboardCheck,
+  Printer
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -93,17 +94,24 @@ export function TaskTable({ tasks, db, userId }: TaskTableProps) {
 
   const handleExportSingle = (task: Task, format: 'json' | 'csv') => {
     let content = "";
+    let mimeType = "text/plain";
+    let ext = "txt";
+
     if (format === 'json') {
       content = JSON.stringify(task, null, 2);
+      mimeType = "application/json";
+      ext = "json";
     } else {
       content = "Description,Owner,Deadline,Priority,Status\n";
       content += `"${task.description}","${task.owner}","${task.deadline || ''}","${task.priority}","${task.status}"`;
+      mimeType = "text/csv";
+      ext = "csv";
     }
-    const blob = new Blob([content], { type: format === 'json' ? 'application/json' : 'text/plain' });
+    const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `task-${task.id.slice(0, 5)}.${format}`;
+    a.download = `task-${task.id.slice(0, 5)}.${ext}`;
     a.click();
   };
 
@@ -121,22 +129,22 @@ export function TaskTable({ tasks, db, userId }: TaskTableProps) {
 
   return (
     <div className="w-full overflow-x-auto scrollbar-hide">
-      <Table className="min-w-[800px] md:min-w-full">
-        <TableHeader className="bg-secondary/30 dark:bg-secondary/10">
+      <Table className="min-w-[800px] md:min-w-full print:min-w-full">
+        <TableHeader className="bg-secondary/30 dark:bg-secondary/10 print:bg-transparent">
           <TableRow>
-            <TableHead className="w-[40px] px-2"></TableHead>
+            <TableHead className="w-[40px] px-2 print:hidden"></TableHead>
             <TableHead className="min-w-[250px]">Task Description</TableHead>
             <TableHead>Owner</TableHead>
             <TableHead>Deadline</TableHead>
             <TableHead>Priority</TableHead>
-            <TableHead className="hidden md:table-cell">Confidence</TableHead>
-            <TableHead className="text-right pr-4">Actions</TableHead>
+            <TableHead className="hidden md:table-cell print:table-cell">Confidence</TableHead>
+            <TableHead className="text-right pr-4 print:hidden">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {tasks.map((task) => (
-            <TableRow key={task.id} className={cn("group transition-colors", task.status === 'completed' && "opacity-60 grayscale-[0.5]")}>
-              <TableCell className="px-2">
+            <TableRow key={task.id} className={cn("group transition-colors", task.status === 'completed' && "opacity-60 grayscale-[0.5] print:opacity-100 print:grayscale-0")}>
+              <TableCell className="px-2 print:hidden">
                 <Checkbox 
                   checked={task.status === 'completed'} 
                   onCheckedChange={() => handleToggleComplete(task.id, task.status)}
@@ -144,19 +152,20 @@ export function TaskTable({ tasks, db, userId }: TaskTableProps) {
                 />
               </TableCell>
               <TableCell className="font-medium">
-                <span className={cn("text-sm line-clamp-2", task.status === 'completed' && "line-through")}>
+                <span className={cn("text-sm line-clamp-2 print:line-clamp-none", task.status === 'completed' && "line-through print:no-underline")}>
                   {task.description}
+                  {task.status === 'completed' && <span className="hidden print:inline ml-2 text-xs text-emerald-600">(Completed)</span>}
                 </span>
               </TableCell>
               <TableCell>
                 <div className="flex items-center text-xs whitespace-nowrap">
-                  <User className="mr-2 h-3 w-3 text-muted-foreground" />
+                  <User className="mr-2 h-3 w-3 text-muted-foreground print:hidden" />
                   {task.owner}
                 </div>
               </TableCell>
               <TableCell>
                 <div className="flex items-center text-xs text-muted-foreground whitespace-nowrap">
-                  <Calendar className="mr-2 h-3 w-3" />
+                  <Calendar className="mr-2 h-3 w-3 print:hidden" />
                   {task.deadline || 'None'}
                 </div>
               </TableCell>
@@ -165,9 +174,9 @@ export function TaskTable({ tasks, db, userId }: TaskTableProps) {
                   {task.priority}
                 </Badge>
               </TableCell>
-              <TableCell className="hidden md:table-cell">
+              <TableCell className="hidden md:table-cell print:table-cell">
                 <div className="flex items-center space-x-2">
-                  <div className="h-1 w-10 bg-secondary rounded-full overflow-hidden">
+                  <div className="h-1 w-10 bg-secondary rounded-full overflow-hidden print:hidden">
                     <div 
                       className="h-full bg-accent" 
                       style={{ width: `${task.confidenceScore}%` }}
@@ -178,7 +187,7 @@ export function TaskTable({ tasks, db, userId }: TaskTableProps) {
                   </span>
                 </div>
               </TableCell>
-              <TableCell className="text-right pr-4">
+              <TableCell className="text-right pr-4 print:hidden">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-7 w-7">

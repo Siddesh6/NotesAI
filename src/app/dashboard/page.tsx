@@ -21,7 +21,8 @@ import {
   Share2,
   FileUp,
   Menu,
-  ChevronDown
+  ChevronDown,
+  Printer
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -246,22 +247,32 @@ export default function Dashboard() {
       return;
     }
 
+    if (format === 'pdf') {
+      window.print();
+      return;
+    }
+
     let content = "";
+    let mimeType = "text/plain";
+    let extension = "txt";
+
     if (format === 'json') {
       content = JSON.stringify(tasks, null, 2);
+      mimeType = "application/json";
+      extension = "json";
     } else if (format === 'csv') {
       const headers = "ID,Description,Owner,Deadline,Priority,Status\n";
       const rows = tasks.map(t => `"${t.id}","${t.description}","${t.owner}","${t.deadline || ''}","${t.priority}","${t.status}"`).join("\n");
       content = headers + rows;
-    } else {
-      content = "PDF Export Simulation\n\n" + tasks.map(t => `- ${t.description} (Owner: ${t.owner})`).join("\n");
+      mimeType = "text/csv";
+      extension = "csv";
     }
 
-    const blob = new Blob([content], { type: format === 'json' ? 'application/json' : 'text/plain' });
+    const blob = new Blob([content], { type: mimeType });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `tasks-export-${new Date().getTime()}.${format}`;
+    a.download = `tasks-export-${new Date().getTime()}.${extension}`;
     a.click();
     toast({ title: "Export Started", description: `Exporting ${tasks.length} tasks as ${format.toUpperCase()}` });
   };
@@ -297,7 +308,7 @@ export default function Dashboard() {
   }
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full bg-white dark:bg-card">
+    <div className="flex flex-col h-full bg-white dark:bg-card print:hidden">
       <div className="p-6 border-b flex items-center space-x-3">
         <Link href="/" className="flex items-center space-x-3">
           <div className="bg-primary rounded-xl p-2 shadow-lg shadow-primary/20">
@@ -351,13 +362,13 @@ export default function Dashboard() {
   return (
     <div className="flex h-screen bg-secondary/10 dark:bg-background overflow-hidden transition-colors">
       {/* Sidebar Desktop */}
-      <aside className="w-64 border-r bg-white dark:bg-card hidden md:flex flex-col shadow-sm">
+      <aside className="w-64 border-r bg-white dark:bg-card hidden md:flex flex-col shadow-sm print:hidden">
         <SidebarContent />
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-16 border-b bg-white dark:bg-card flex items-center justify-between px-4 md:px-8 shadow-sm z-50">
+        <header className="h-16 border-b bg-white dark:bg-card flex items-center justify-between px-4 md:px-8 shadow-sm z-50 print:hidden">
           <div className="flex items-center space-x-2 md:space-x-4">
             {/* Mobile Sidebar Trigger */}
             <Sheet>
@@ -390,7 +401,7 @@ export default function Dashboard() {
                <DropdownMenuContent align="end">
                  <DropdownMenuItem onClick={() => handleExport('json')}>Export as JSON</DropdownMenuItem>
                  <DropdownMenuItem onClick={() => handleExport('csv')}>Export as CSV</DropdownMenuItem>
-                 <DropdownMenuItem onClick={() => handleExport('pdf')}>Export as PDF</DropdownMenuItem>
+                 <DropdownMenuItem onClick={() => handleExport('pdf')}>Print / Save as PDF</DropdownMenuItem>
                </DropdownMenuContent>
              </DropdownMenu>
              <Button size="sm" onClick={() => { setTranscript(''); setCurrentRunId(null); }} className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 h-8 md:h-9 px-2 md:px-4">
@@ -400,11 +411,11 @@ export default function Dashboard() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 md:space-y-12 bg-secondary/5 dark:bg-background/50">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 md:space-y-12 bg-secondary/5 dark:bg-background/50 print:bg-white print:p-0">
           <div className="max-w-7xl mx-auto space-y-8 md:space-y-12">
             
             {/* Input Section */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8 print:hidden">
               <div className="xl:col-span-2 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
                    <div>
@@ -491,7 +502,7 @@ export default function Dashboard() {
 
             {/* Workflow Visualization */}
             {(isProcessing || activeStep === 'RUN_COMPLETE') && (
-              <div className="space-y-4 md:space-y-6 animate-in fade-in duration-500">
+              <div className="space-y-4 md:space-y-6 animate-in fade-in duration-500 print:hidden">
                 <div className="flex items-center justify-between">
                    <h3 className="text-lg md:text-xl font-bold text-primary">Execution Pipeline</h3>
                    <span className="text-[10px] md:text-xs font-mono text-muted-foreground">RUN_ID: {currentRunId?.slice(0, 8)}</span>
@@ -502,7 +513,7 @@ export default function Dashboard() {
 
             {/* Metrics Dashboard */}
             {tasks.length > 0 && (
-              <div className="space-y-6">
+              <div className="space-y-6 print:hidden">
                 <h3 className="text-lg md:text-xl font-bold text-primary">Analytics Dashboard</h3>
                 <MetricsPanel tasks={tasks} />
               </div>
@@ -510,7 +521,7 @@ export default function Dashboard() {
 
             {/* Task Table */}
             <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
                 <div>
                   <h3 className="text-lg md:text-xl font-bold text-primary">Action Item Repository</h3>
                   <p className="text-xs md:text-sm text-muted-foreground">Manage and track your extracted tasks.</p>
@@ -530,12 +541,16 @@ export default function Dashboard() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => handleExport('json')}>JSON</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleExport('csv')}>CSV</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleExport('pdf')}>PDF</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => window.print()}>PDF</DropdownMenuItem>
                       </DropdownMenuContent>
                    </DropdownMenu>
                 </div>
               </div>
-              <div className="bg-white dark:bg-card rounded-xl border shadow-sm overflow-hidden">
+              <div className="bg-white dark:bg-card rounded-xl border shadow-sm overflow-hidden print:border-none print:shadow-none">
+                <div className="hidden print:block p-8 border-b mb-8">
+                  <h1 className="text-2xl font-bold text-primary">NotesAI: Meeting Action Items</h1>
+                  <p className="text-sm text-muted-foreground">Generated on {new Date().toLocaleDateString()}</p>
+                </div>
                 <TaskTable tasks={tasks as any} db={db!} userId={user?.uid || ''} />
               </div>
             </div>
