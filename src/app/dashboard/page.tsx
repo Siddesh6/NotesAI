@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -6,6 +7,7 @@ import { collection, doc, query, orderBy } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   Zap, 
   LogOut, 
@@ -18,7 +20,6 @@ import {
   Loader2,
   Share2,
   FileUp,
-  Settings
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -317,9 +318,12 @@ export default function Dashboard() {
         <div className="p-4 border-t mt-auto">
           <div className="bg-secondary/20 p-4 rounded-xl mb-4">
              <div className="flex items-center mb-2">
-                <div className="h-8 w-8 rounded-full bg-accent text-white flex items-center justify-center font-bold text-xs mr-3">
-                  {profile?.displayName?.charAt(0) || user?.email?.charAt(0)}
-                </div>
+                <Avatar className="h-8 w-8 mr-3">
+                  <AvatarImage src={profile?.photoURL} />
+                  <AvatarFallback className="bg-accent text-white font-bold text-xs">
+                    {profile?.displayName?.charAt(0) || user?.email?.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
                 <div className="overflow-hidden">
                    <p className="text-xs font-bold text-primary truncate">{profile?.displayName || 'User'}</p>
                    <p className="text-[10px] text-muted-foreground truncate">{user?.email}</p>

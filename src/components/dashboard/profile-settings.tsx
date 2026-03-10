@@ -1,8 +1,10 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { doc, Firestore } from 'firebase/firestore';
-import { updateDocumentNonBlocking } from '@/firebase';
+import { updateDocumentNonBlocking, useAuth } from '@/firebase';
+import { sendPasswordResetEmail } from 'firebase/auth';
 import {
   Dialog,
   DialogContent,
@@ -15,7 +17,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { User, Settings, Loader2 } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { User, Settings, Loader2, Key, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ProfileSettingsProps {
@@ -26,13 +29,17 @@ interface ProfileSettingsProps {
 
 export function ProfileSettings({ db, userId, currentProfile }: ProfileSettingsProps) {
   const [displayName, setDisplayName] = useState(currentProfile?.displayName || '');
+  const [photoURL, setPhotoURL] = useState(currentProfile?.photoURL || '');
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSendingReset, setIsSendingReset] = useState(false);
   const { toast } = useToast();
+  const auth = useAuth();
 
   useEffect(() => {
-    if (currentProfile?.displayName) {
-      setDisplayName(currentProfile.displayName);
+    if (currentProfile) {
+      setDisplayName(currentProfile.displayName || '');
+      setPhotoURL(currentProfile.photoURL || '');
     }
   }, [currentProfile]);
 
@@ -51,6 +58,7 @@ export function ProfileSettings({ db, userId, currentProfile }: ProfileSettingsP
     
     updateDocumentNonBlocking(userRef, {
       displayName: displayName.trim(),
+      photoURL: photoURL.trim(),
       updatedAt: new Date().toISOString(),
     });
 
@@ -65,6 +73,27 @@ export function ProfileSettings({ db, userId, currentProfile }: ProfileSettingsP
     }, 500);
   };
 
+  const handleSendResetEmail = async () => {
+    if (!currentProfile?.email) return;
+    
+    setIsSendingReset(true);
+    try {
+      await sendPasswordResetEmail(auth, currentProfile.email);
+      toast({
+        title: "Reset Email Sent",
+        description: "A password reset link has been sent to your email address.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSendingReset(false);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
@@ -75,38 +104,78 @@ export function ProfileSettings({ db, userId, currentProfile }: ProfileSettingsP
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Edit Profile</DialogTitle>
+          <DialogTitle>Account Settings</DialogTitle>
           <DialogDescription>
-            Update your personal information here. Click save when you're done.
+            Update your profile details and security settings.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="flex items-center justify-center mb-4">
-            <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center border-2 border-primary/20">
-              <User className="h-10 w-10 text-primary" />
+        <div className="grid gap-6 py-4">
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <Avatar className="h-24 w-24 border-2 border-primary/20">
+              <AvatarImage src={photoURL} alt={displayName} />
+              <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
+                {displayName?.charAt(0) || currentProfile?.email?.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+            <p className="text-xs text-muted-foreground">Preview</p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">Name</Label>
+              <Input
+                id="name"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                className="col-span-3"
+                placeholder="Full name"
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="photo" className="text-right">Photo URL</Label>
+              <div className="col-span-3 relative">
+                <Input
+                  id="photo"
+                  value={photoURL}
+                  onChange={(e) => setPhotoURL(e.target.value)}
+                  placeholder="https://example.com/photo.jpg"
+                  className="pr-10"
+                />
+                <ImageIcon className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Email</Label>
+              <Input
+                value={currentProfile?.email || ''}
+                className="col-span-3 bg-secondary/50 cursor-not-allowed"
+                disabled
+              />
             </div>
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">
-              Name
-            </Label>
-            <Input
-              id="name"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className="col-span-3"
-              placeholder="Your full name"
-            />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label className="text-right">
-              Email
-            </Label>
-            <Input
-              value={currentProfile?.email || ''}
-              className="col-span-3 bg-secondary/50 cursor-not-allowed"
-              disabled
-            />
+
+          <div className="pt-4 border-t space-y-4">
+            <h4 className="text-sm font-semibold flex items-center">
+              <Key className="mr-2 h-4 w-4 text-accent" />
+              Security
+            </h4>
+            <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/20 border border-secondary/30">
+              <div className="space-y-1">
+                <p className="text-xs font-bold">Password Management</p>
+                <p className="text-[10px] text-muted-foreground">Receive a reset link via email</p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleSendResetEmail} 
+                disabled={isSendingReset}
+                className="text-xs h-8"
+              >
+                {isSendingReset ? <Loader2 className="h-3 w-3 animate-spin" /> : "Send Reset Link"}
+              </Button>
+            </div>
           </div>
         </div>
         <DialogFooter>

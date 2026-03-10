@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "UserProfile": {
@@ -18,6 +19,10 @@
         "displayName": {
           "type": "string",
           "description": "The user's display name or full name."
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "The URL of the user's profile photo."
         },
         "createdAt": {
           "type": "string",
