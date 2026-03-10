@@ -1,3 +1,16 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-meeting",
+      "description": "Team collaborating in a modern office meeting room",
+      "imageUrl": "https://picsum.photos/seed/meeting1/1200/800",
+      "imageHint": "meeting collaboration"
+    },
+    {
+      "id": "app-preview",
+      "description": "Clean dashboard interface showing action items",
+      "imageUrl": "https://picsum.photos/seed/dashboard/800/600",
+      "imageHint": "dashboard software"
+    }
+  ]
 }
