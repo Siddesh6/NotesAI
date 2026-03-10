@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Settings, Loader2, Key, Upload, Camera } from 'lucide-react';
+import { Settings, Loader2, Key, Upload, Camera } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ProfileSettingsProps {
@@ -51,16 +51,6 @@ export function ProfileSettings({ db, userId, currentProfile }: ProfileSettingsP
       toast({
         title: "Invalid file type",
         description: "Please select an image file.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Limit file size to ~1MB for Firestore string storage
-    if (file.size > 1024 * 1024) {
-      toast({
-        title: "File too large",
-        description: "Please select an image smaller than 1MB.",
         variant: "destructive",
       });
       return;
@@ -177,7 +167,6 @@ export function ProfileSettings({ db, userId, currentProfile }: ProfileSettingsP
                 <Upload className="mr-2 h-3 w-3" />
                 Change Photo
               </Button>
-              <p className="text-[10px] text-muted-foreground italic">Recommended: Square image, max 1MB</p>
             </div>
           </div>
 
