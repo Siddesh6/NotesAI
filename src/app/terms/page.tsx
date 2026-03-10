@@ -65,7 +65,7 @@ export default function TermsOfService() {
           <div>
             <h2 className="text-xl font-bold mb-2">5. Data Ownership & Intellectual Property</h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              You retain all rights to the transcripts and data you upload. NotesAI owns the underlying technology, branding, and proprietary algorithms associated with the Service.
+              You retain all rights to the transcripts and data you upload. NotesAI and its developer, Siddesh B, own the underlying technology, branding, and proprietary algorithms associated with the Service.
             </p>
           </div>
 

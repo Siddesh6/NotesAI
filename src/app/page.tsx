@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle, Zap, Shield, FileText, ArrowRight, Twitter, Globe, Linkedin, Mail, Cpu } from 'lucide-react';
+import { CheckCircle, Zap, FileText, ArrowRight, Linkedin, Mail, Cpu } from 'lucide-react';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 

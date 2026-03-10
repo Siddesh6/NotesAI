@@ -79,9 +79,9 @@ export default function PrivacyPolicy() {
           </div>
 
           <div>
-            <h2 className="text-xl font-bold mb-2">6. Contact</h2>
+            <h2 className="text-xl font-bold mb-2">6. Contact & Data Controller</h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              For any privacy-related inquiries, please contact Siddesh B at <Link href="mailto:siddeshb.contact@gmail.com" className="text-primary font-medium">siddeshb.contact@gmail.com</Link>.
+              For any privacy-related inquiries, please contact the developer and data controller, Siddesh B, at <Link href="mailto:siddeshb.contact@gmail.com" className="text-primary font-medium">siddeshb.contact@gmail.com</Link>.
             </p>
           </div>
         </section>
