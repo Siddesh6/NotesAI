@@ -137,6 +137,34 @@
         "status",
         "createdAt"
       ]
+    },
+    "Run": {
+      "title": "Run",
+      "type": "object",
+      "description": "Records an AI extraction session execution.",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "transcriptId": { "type": "string" },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "completedAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["PENDING", "COMPLETED", "FAILED"] },
+        "totalTasksExtracted": { "type": "number" }
+      }
+    },
+    "LogEvent": {
+      "title": "LogEvent",
+      "type": "object",
+      "description": "A specific log entry for a processing run.",
+      "properties": {
+        "id": { "type": "string" },
+        "runId": { "type": "string" },
+        "userId": { "type": "string" },
+        "eventType": { "type": "string" },
+        "message": { "type": "string" },
+        "details": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "auth": {
@@ -151,9 +179,7 @@
         "path": "/users/{userId}",
         "definition": {
           "entityName": "UserProfile",
-          "schema": {
-            "$ref": "#/backend/entities/UserProfile"
-          },
+          "schema": { "$ref": "#/backend/entities/UserProfile" },
           "description": "Stores user profile information."
         }
       },
@@ -161,9 +187,7 @@
         "path": "/users/{userId}/transcripts/{transcriptId}",
         "definition": {
           "entityName": "Transcript",
-          "schema": {
-            "$ref": "#/backend/entities/Transcript"
-          },
+          "schema": { "$ref": "#/backend/entities/Transcript" },
           "description": "Stores meeting transcripts for a user."
         }
       },
@@ -171,10 +195,24 @@
         "path": "/users/{userId}/tasks/{taskId}",
         "definition": {
           "entityName": "Task",
-          "schema": {
-            "$ref": "#/backend/entities/Task"
-          },
+          "schema": { "$ref": "#/backend/entities/Task" },
           "description": "Stores tasks extracted for a user."
+        }
+      },
+      {
+        "path": "/users/{userId}/runs/{runId}",
+        "definition": {
+          "entityName": "Run",
+          "schema": { "$ref": "#/backend/entities/Run" },
+          "description": "Execution run history."
+        }
+      },
+      {
+        "path": "/users/{userId}/runs/{runId}/logEvents/{logEventId}",
+        "definition": {
+          "entityName": "LogEvent",
+          "schema": { "$ref": "#/backend/entities/LogEvent" },
+          "description": "Detailed logs for a specific run."
         }
       }
     ]

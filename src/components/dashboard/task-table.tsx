@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -20,13 +21,15 @@ import {
   Calendar,
   Share2,
   Download,
-  ExternalLink
+  ExternalLink,
+  ClipboardCheck
 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
@@ -75,6 +78,18 @@ export function TaskTable({ tasks, db, userId }: TaskTableProps) {
     const taskRef = doc(db, 'users', userId, 'tasks', taskId);
     deleteDocumentNonBlocking(taskRef);
     toast({ title: "Task Deleted", description: "The task has been removed from your repository." });
+  };
+
+  const handleCopyToTool = (task: Task, tool: 'Jira' | 'Trello') => {
+    const content = tool === 'Jira' 
+      ? `*Task:* ${task.description}\n*Owner:* ${task.owner}\n*Priority:* ${task.priority}\n*Deadline:* ${task.deadline || 'None'}`
+      : `### ${task.description}\n- **Owner:** ${task.owner}\n- **Priority:** ${task.priority}\n- **Deadline:** ${task.deadline || 'None'}`;
+    
+    navigator.clipboard.writeText(content);
+    toast({ 
+      title: `Copied for ${tool}`, 
+      description: `Task formatted for ${tool} import has been copied to clipboard.` 
+    });
   };
 
   const handleExportSingle = (task: Task, format: 'json' | 'csv') => {
@@ -171,7 +186,7 @@ export function TaskTable({ tasks, db, userId }: TaskTableProps) {
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuItem className="cursor-pointer">
                       <Edit2 className="mr-2 h-4 w-4" />
                       Edit Task
@@ -184,18 +199,24 @@ export function TaskTable({ tasks, db, userId }: TaskTableProps) {
                       }}
                     >
                       <Share2 className="mr-2 h-4 w-4" />
-                      Share Task
+                      Share Details
                     </DropdownMenuItem>
                     <DropdownMenuItem className="cursor-pointer" onClick={() => handleExportSingle(task, 'csv')}>
                       <Download className="mr-2 h-4 w-4" />
-                      Export to CSV
+                      Download CSV
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer" onClick={() => toast({ title: "Connecting...", description: "Jira integration setup required." })}>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => handleCopyToTool(task, 'Jira')}>
                       <ExternalLink className="mr-2 h-4 w-4" />
-                      Send to Jira
+                      Copy for Jira
                     </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => handleCopyToTool(task, 'Trello')}>
+                      <ClipboardCheck className="mr-2 h-4 w-4" />
+                      Copy for Trello
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem 
-                      className="cursor-pointer text-destructive focus:text-destructive"
+                      className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/5"
                       onClick={() => handleDelete(task.id)}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
