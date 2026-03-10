@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { useAuth, useFirestore, useUser, useCollection, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { useAuth, useFirestore, useUser, useCollection, useDoc, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, doc, query, orderBy } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,8 @@ import {
   ChevronRight,
   Loader2,
   Share2,
-  FileUp
+  FileUp,
+  Settings
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -29,6 +30,7 @@ import { useToast } from '@/hooks/use-toast';
 import { TaskTable } from '@/components/dashboard/task-table';
 import { MetricsPanel } from '@/components/dashboard/metrics-panel';
 import { LogsViewer } from '@/components/dashboard/logs-viewer';
+import { ProfileSettings } from '@/components/dashboard/profile-settings';
 
 export default function Dashboard() {
   const { user, isUserLoading } = useUser();
@@ -43,20 +45,26 @@ export default function Dashboard() {
   const [activeStep, setActiveStep] = useState('');
   const [currentRunId, setCurrentRunId] = useState<string | null>(null);
 
-  // Firestore Data Subscriptions - Scoped to User UID for strict isolation
+  // Profile Subscription
+  const profileRef = useMemoFirebase(() => {
+    if (!db || !user?.uid) return null;
+    return doc(db, 'users', user.uid);
+  }, [db, user?.uid]);
+  const { data: profile } = useDoc(profileRef);
+
+  // Tasks Subscription
   const tasksQuery = useMemoFirebase(() => {
     if (!db || !user?.uid) return null;
     return query(collection(db, 'users', user.uid, 'tasks'), orderBy('createdAt', 'desc'));
   }, [db, user?.uid]);
-  
   const { data: tasksData } = useCollection(tasksQuery);
   const tasks = useMemo(() => tasksData || [], [tasksData]);
 
+  // Logs Subscription
   const logsQuery = useMemoFirebase(() => {
     if (!db || !user?.uid || !currentRunId) return null;
     return query(collection(db, 'users', user.uid, 'runs', currentRunId, 'logEvents'), orderBy('timestamp', 'asc'));
   }, [db, user?.uid, currentRunId]);
-
   const { data: logsData } = useCollection(logsQuery);
   const logs = useMemo(() => logsData || [], [logsData]);
 
@@ -125,7 +133,6 @@ export default function Dashboard() {
     const transcriptId = crypto.randomUUID();
     setCurrentRunId(runId);
     
-    // 1. Store Transcript first (for history)
     const transcriptRef = doc(db, 'users', user.uid, 'transcripts', transcriptId);
     setDocumentNonBlocking(transcriptRef, {
       id: transcriptId,
@@ -135,7 +142,6 @@ export default function Dashboard() {
       title: transcript.slice(0, 50) + '...'
     });
 
-    // 2. Initialize Run
     const runRef = doc(db, 'users', user.uid, 'runs', runId);
     setDocumentNonBlocking(runRef, {
       id: runId,
@@ -306,15 +312,16 @@ export default function Dashboard() {
             <Clock className="mr-3 h-4 w-4" />
             Run History
           </Button>
+          <ProfileSettings db={db!} userId={user?.uid || ''} currentProfile={profile} />
         </nav>
         <div className="p-4 border-t mt-auto">
           <div className="bg-secondary/20 p-4 rounded-xl mb-4">
              <div className="flex items-center mb-2">
                 <div className="h-8 w-8 rounded-full bg-accent text-white flex items-center justify-center font-bold text-xs mr-3">
-                  {user?.displayName?.charAt(0) || user?.email?.charAt(0)}
+                  {profile?.displayName?.charAt(0) || user?.email?.charAt(0)}
                 </div>
                 <div className="overflow-hidden">
-                   <p className="text-xs font-bold text-primary truncate">{user?.displayName || 'User'}</p>
+                   <p className="text-xs font-bold text-primary truncate">{profile?.displayName || 'User'}</p>
                    <p className="text-[10px] text-muted-foreground truncate">{user?.email}</p>
                 </div>
              </div>
