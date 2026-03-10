@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle, Zap, Shield, FileText, ArrowRight, Github, Twitter, Globe } from 'lucide-react';
+import { CheckCircle, Zap, Shield, FileText, ArrowRight, Github, Twitter, Globe, Linkedin, Mail } from 'lucide-react';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
@@ -135,17 +135,17 @@ export default function LandingPage() {
             <div className="space-y-4">
               <h4 className="text-sm font-bold uppercase tracking-wider text-primary">Created By</h4>
               <div className="flex flex-col space-y-2">
-                <span className="text-sm font-medium text-foreground">[Your Name / Your Company]</span>
+                <span className="text-sm font-bold text-foreground">Siddesh B</span>
                 <p className="text-xs text-muted-foreground">Building the future of meeting productivity.</p>
                 <div className="flex space-x-4 pt-2">
+                  <Link href="mailto:siddeshb.contact@gmail.com" className="text-muted-foreground hover:text-primary transition-colors">
+                    <Mail className="h-4 w-4" />
+                  </Link>
+                  <Link href="https://www.linkedin.com/in/bsiddesh" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
+                    <Linkedin className="h-4 w-4" />
+                  </Link>
                   <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
                     <Github className="h-4 w-4" />
-                  </Link>
-                  <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                    <Twitter className="h-4 w-4" />
-                  </Link>
-                  <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                    <Globe className="h-4 w-4" />
                   </Link>
                 </div>
               </div>
@@ -154,10 +154,10 @@ export default function LandingPage() {
             <div className="space-y-4">
               <h4 className="text-sm font-bold uppercase tracking-wider text-primary">Quick Links</h4>
               <nav className="flex flex-col space-y-2">
-                <Link className="text-xs hover:underline underline-offset-4 text-muted-foreground" href="#">
+                <Link className="text-xs hover:underline underline-offset-4 text-muted-foreground" href="/terms">
                   Terms of Service
                 </Link>
-                <Link className="text-xs hover:underline underline-offset-4 text-muted-foreground" href="#">
+                <Link className="text-xs hover:underline underline-offset-4 text-muted-foreground" href="/privacy">
                   Privacy Policy
                 </Link>
                 <Link className="text-xs hover:underline underline-offset-4 text-muted-foreground" href="/dashboard">
