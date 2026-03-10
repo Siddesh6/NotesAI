@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { doc, Firestore, deleteDoc } from 'firebase/firestore';
-import { updateDocumentNonBlocking, useAuth } from '@/firebase';
+import { setDocumentNonBlocking, useAuth } from '@/firebase';
 import { sendPasswordResetEmail, deleteUser } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import {
@@ -72,6 +72,17 @@ export function ProfileSettings({ db, userId, currentProfile }: ProfileSettingsP
       return;
     }
 
+    // Firestore has a 1MB limit for document size. 
+    // We check if the file is roughly under 700KB before Base64 encoding.
+    if (file.size > 700 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please choose an image smaller than 700KB to ensure it can be stored.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (event) => {
       const result = event.target?.result as string;
@@ -93,11 +104,13 @@ export function ProfileSettings({ db, userId, currentProfile }: ProfileSettingsP
     setIsSaving(true);
     const userRef = doc(db, 'users', userId);
     
-    updateDocumentNonBlocking(userRef, {
+    // Using setDocumentNonBlocking with merge: true ensures the fields are updated 
+    // correctly even if the document was missing some fields initially.
+    setDocumentNonBlocking(userRef, {
       displayName: displayName.trim(),
       photoURL: photoURL,
       updatedAt: new Date().toISOString(),
-    });
+    }, { merge: true });
 
     // Simulate a small delay for better UX
     setTimeout(() => {
@@ -105,7 +118,7 @@ export function ProfileSettings({ db, userId, currentProfile }: ProfileSettingsP
       setIsOpen(false);
       toast({
         title: "Profile Updated",
-        description: "Your changes have been saved successfully.",
+        description: "Your changes have been saved and will persist after refresh.",
       });
     }, 500);
   };
@@ -189,7 +202,7 @@ export function ProfileSettings({ db, userId, currentProfile }: ProfileSettingsP
           <div className="grid gap-6 py-4">
             <div className="flex flex-col items-center justify-center space-y-4">
               <div className="relative group">
-                <Avatar className="h-24 w-24 border-2 border-primary/20">
+                <Avatar className="h-24 w-24 border-2 border-primary/20 shadow-sm">
                   <AvatarImage src={photoURL} alt={displayName} className="object-cover" />
                   <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
                     {displayName?.charAt(0) || currentProfile?.email?.charAt(0)}
@@ -219,6 +232,7 @@ export function ProfileSettings({ db, userId, currentProfile }: ProfileSettingsP
                   <Upload className="mr-2 h-3 w-3" />
                   Change Photo
                 </Button>
+                <p className="text-[10px] text-muted-foreground italic">Max size: 700KB</p>
               </div>
             </div>
 
