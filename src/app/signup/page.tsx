@@ -11,14 +11,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Zap, Loader2 } from 'lucide-react';
+import { Zap, Loader2, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const auth = useAuth();
@@ -28,6 +30,15 @@ export default function SignupPage() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!agreedToTerms) {
+      toast({
+        title: 'Action Required',
+        description: 'Please agree to the Terms and Conditions to continue.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -56,6 +67,15 @@ export default function SignupPage() {
   };
 
   const handleGoogleSignIn = async () => {
+    if (!agreedToTerms) {
+      toast({
+        title: 'Action Required',
+        description: 'Please agree to the Terms and Conditions to continue.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsGoogleLoading(true);
     const provider = new GoogleAuthProvider();
     try {
@@ -134,7 +154,28 @@ export default function SignupPage() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading}>
+
+            <div className="flex items-start space-x-2 pt-2">
+              <Checkbox 
+                id="terms" 
+                checked={agreedToTerms} 
+                onCheckedChange={(checked) => setAgreedToTerms(checked as boolean)}
+              />
+              <div className="grid gap-1.5 leading-none">
+                <Label
+                  htmlFor="terms"
+                  className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                >
+                  I agree to the <Link href="/terms" className="text-primary hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>
+                </Label>
+                <p className="text-[10px] text-muted-foreground flex items-center">
+                  <Info className="h-2 w-2 mr-1" />
+                  Your data is used only for AI extraction purposes.
+                </p>
+              </div>
+            </div>
+
+            <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading || !agreedToTerms}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Create Account
             </Button>
@@ -153,7 +194,7 @@ export default function SignupPage() {
             variant="outline" 
             className="w-full" 
             onClick={handleGoogleSignIn} 
-            disabled={isLoading || isGoogleLoading}
+            disabled={isLoading || isGoogleLoading || !agreedToTerms}
           >
             {isGoogleLoading ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
