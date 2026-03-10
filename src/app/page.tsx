@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle, Zap, Shield, FileText, ArrowRight } from 'lucide-react';
+import { CheckCircle, Zap, Shield, FileText, ArrowRight, Github, Twitter, Globe } from 'lucide-react';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
@@ -117,19 +117,61 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="w-full border-t py-6 bg-white">
-        <div className="container px-4 md:px-6 mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-xs text-muted-foreground">
-            © 2024 NotesAI Inc. All rights reserved.
-          </p>
-          <nav className="flex gap-4 sm:gap-6">
-            <Link className="text-xs hover:underline underline-offset-4" href="#">
-              Terms of Service
-            </Link>
-            <Link className="text-xs hover:underline underline-offset-4" href="#">
-              Privacy
-            </Link>
-          </nav>
+      <footer className="w-full border-t py-12 bg-white">
+        <div className="container px-4 md:px-6 mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+            <div className="space-y-4">
+              <Link className="flex items-center space-x-2" href="/">
+                <div className="bg-primary rounded-lg p-1.5">
+                  <Zap className="h-5 w-5 text-white" />
+                </div>
+                <span className="font-headline font-bold text-xl tracking-tight text-primary">NotesAI</span>
+              </Link>
+              <p className="text-sm text-muted-foreground max-w-xs">
+                Revolutionizing how teams turn conversations into actionable progress with the power of GenAI.
+              </p>
+            </div>
+            
+            <div className="space-y-4">
+              <h4 className="text-sm font-bold uppercase tracking-wider text-primary">Created By</h4>
+              <div className="flex flex-col space-y-2">
+                <span className="text-sm font-medium text-foreground">[Your Name / Your Company]</span>
+                <p className="text-xs text-muted-foreground">Building the future of meeting productivity.</p>
+                <div className="flex space-x-4 pt-2">
+                  <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                    <Github className="h-4 w-4" />
+                  </Link>
+                  <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                    <Twitter className="h-4 w-4" />
+                  </Link>
+                  <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                    <Globe className="h-4 w-4" />
+                  </Link>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <h4 className="text-sm font-bold uppercase tracking-wider text-primary">Quick Links</h4>
+              <nav className="flex flex-col space-y-2">
+                <Link className="text-xs hover:underline underline-offset-4 text-muted-foreground" href="#">
+                  Terms of Service
+                </Link>
+                <Link className="text-xs hover:underline underline-offset-4 text-muted-foreground" href="#">
+                  Privacy Policy
+                </Link>
+                <Link className="text-xs hover:underline underline-offset-4 text-muted-foreground" href="/dashboard">
+                  Dashboard
+                </Link>
+              </nav>
+            </div>
+          </div>
+          
+          <div className="mt-12 pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-xs text-muted-foreground">
+              © {new Date().getFullYear()} NotesAI Inc. All rights reserved.
+            </p>
+          </div>
         </div>
       </footer>
     </div>
