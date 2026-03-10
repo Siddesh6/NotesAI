@@ -1,7 +1,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Zap } from 'lucide-react';
+import { ArrowLeft, Zap, Cpu } from 'lucide-react';
 
 export default function TermsOfService() {
   return (
@@ -24,6 +24,16 @@ export default function TermsOfService() {
         <p className="text-muted-foreground mb-8 text-sm italic">Last updated: {new Date().toLocaleDateString()}</p>
 
         <section className="space-y-6 text-foreground">
+          <div className="bg-accent/5 p-4 rounded-xl border border-accent/10 mb-6 flex items-start space-x-4">
+            <Cpu className="h-6 w-6 text-accent shrink-0 mt-1" />
+            <div>
+              <h3 className="text-sm font-bold text-accent uppercase tracking-wider mb-1">AI Usage Disclosure</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                NotesAI is an AI-powered application generated and enhanced using advanced generative AI tools. By using this service, you acknowledge that content and task extractions are automated.
+              </p>
+            </div>
+          </div>
+
           <div>
             <h2 className="text-xl font-bold mb-2">1. Acceptance of Terms</h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
@@ -46,23 +56,23 @@ export default function TermsOfService() {
           </div>
 
           <div>
-            <h2 className="text-xl font-bold mb-2">4. Data Ownership & Intellectual Property</h2>
+            <h2 className="text-xl font-bold mb-2">4. AI Content Disclaimer & Accuracy</h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              You retain all rights to the transcripts and data you upload. NotesAI owns the underlying technology, algorithms, and branding associated with the Service.
+              NotesAI utilizes Large Language Models (LLMs) to process and extract data. While the underlying technology is highly advanced, AI models can produce inaccurate results ("hallucinations"). <strong>Users are solely responsible for verifying the accuracy of all AI-generated tasks, owners, and deadlines</strong> before acting upon them. NotesAI assumes no liability for errors in extracted content.
             </p>
           </div>
 
           <div>
-            <h2 className="text-xl font-bold mb-2">5. AI Disclaimer</h2>
+            <h2 className="text-xl font-bold mb-2">5. Data Ownership & Intellectual Property</h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              NotesAI uses generative AI to extract tasks. While we strive for accuracy, AI models can occasionally produce errors or hallucinations. Users should verify extracted tasks for accuracy before relying on them.
+              You retain all rights to the transcripts and data you upload. NotesAI owns the underlying technology, branding, and proprietary algorithms associated with the Service.
             </p>
           </div>
 
           <div>
             <h2 className="text-xl font-bold mb-2">6. Limitation of Liability</h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              NotesAI shall not be liable for any indirect, incidental, special, or consequential damages resulting from the use or inability to use the Service.
+              In no event shall NotesAI or its creator, Siddesh B, be liable for any indirect, incidental, special, or consequential damages resulting from the use or inability to use the Service, including reliance on automated AI outputs.
             </p>
           </div>
 
@@ -70,13 +80,6 @@ export default function TermsOfService() {
             <h2 className="text-xl font-bold mb-2">7. Termination</h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
               We reserve the right to terminate or suspend access to our Service immediately, without prior notice or liability, for any reason whatsoever, including breach of these Terms.
-            </p>
-          </div>
-
-          <div>
-            <h2 className="text-xl font-bold mb-2">8. Governing Law</h2>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              These Terms shall be governed by and construed in accordance with the laws of your jurisdiction, without regard to its conflict of law provisions.
             </p>
           </div>
         </section>

@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle, Zap, Shield, FileText, ArrowRight, Github, Twitter, Globe, Linkedin, Mail } from 'lucide-react';
+import { CheckCircle, Zap, Shield, FileText, ArrowRight, Twitter, Globe, Linkedin, Mail, Cpu } from 'lucide-react';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
@@ -119,7 +119,7 @@ export default function LandingPage() {
 
       <footer className="w-full border-t py-12 bg-white">
         <div className="container px-4 md:px-6 mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 items-start">
             <div className="space-y-4">
               <Link className="flex items-center space-x-2" href="/">
                 <div className="bg-primary rounded-lg p-1.5">
@@ -130,6 +130,10 @@ export default function LandingPage() {
               <p className="text-sm text-muted-foreground max-w-xs">
                 Revolutionizing how teams turn conversations into actionable progress with the power of GenAI.
               </p>
+              <div className="flex items-center space-x-2 text-[10px] text-muted-foreground uppercase tracking-widest bg-secondary/30 px-3 py-1.5 rounded-full w-fit">
+                <Cpu className="h-3 w-3" />
+                <span>AI-Powered Application</span>
+              </div>
             </div>
             
             <div className="space-y-4">
@@ -143,9 +147,6 @@ export default function LandingPage() {
                   </Link>
                   <Link href="https://www.linkedin.com/in/bsiddesh" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
                     <Linkedin className="h-4 w-4" />
-                  </Link>
-                  <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                    <Github className="h-4 w-4" />
                   </Link>
                 </div>
               </div>
@@ -169,7 +170,7 @@ export default function LandingPage() {
           
           <div className="mt-12 pt-8 border-t flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-xs text-muted-foreground">
-              © {new Date().getFullYear()} NotesAI Inc. All rights reserved.
+              © {new Date().getFullYear()} NotesAI. Created with advanced AI Tools. All rights reserved.
             </p>
           </div>
         </div>

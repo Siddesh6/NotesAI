@@ -1,7 +1,7 @@
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Zap, Shield } from 'lucide-react';
+import { ArrowLeft, Zap, Shield, Cpu } from 'lucide-react';
 
 export default function PrivacyPolicy() {
   return (
@@ -27,6 +27,16 @@ export default function PrivacyPolicy() {
         <p className="text-muted-foreground mb-8 text-sm italic">Last updated: {new Date().toLocaleDateString()}</p>
 
         <section className="space-y-6 text-foreground">
+          <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 mb-6 flex items-start space-x-4">
+            <Cpu className="h-6 w-6 text-primary shrink-0 mt-1" />
+            <div>
+              <h3 className="text-sm font-bold text-primary uppercase tracking-wider mb-1">AI Data Processing Standard</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Your data is processed using modern Generative AI standards. We utilize secure APIs to interact with AI models, ensuring your transcripts are not used for public model training.
+              </p>
+            </div>
+          </div>
+
           <div>
             <h2 className="text-xl font-bold mb-2">1. Information We Collect</h2>
             <p className="text-sm leading-relaxed text-muted-foreground mb-2">
@@ -34,54 +44,44 @@ export default function PrivacyPolicy() {
             </p>
             <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
               <li>Account information (email, display name, profile photo).</li>
-              <li>Meeting transcripts and notes you upload for processing.</li>
-              <li>Authentication tokens provided by Firebase.</li>
+              <li>Meeting transcripts and notes you upload for AI processing.</li>
+              <li>Authentication metadata provided by Firebase.</li>
             </ul>
           </div>
 
           <div>
-            <h2 className="text-xl font-bold mb-2">2. How We Use Your Information</h2>
+            <h2 className="text-xl font-bold mb-2">2. How AI Uses Your Data</h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Your information is used solely to provide the AI extraction service. This includes processing transcripts using GenAI models, storing extracted tasks in your personal repository, and personalizing your dashboard experience.
+              Your meeting transcripts are transmitted via secure HTTPS to Google's Generative AI models (Gemini) solely for the purpose of task extraction and summarization. <strong>Your private transcripts are not used to train generic public AI models</strong>. The data is processed in a transient manner during the extraction run.
             </p>
           </div>
 
           <div>
             <h2 className="text-xl font-bold mb-2">3. Data Storage and Security</h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              We use Firebase (a Google Cloud platform) for authentication and database storage. All data is scoped to your user ID via Firestore Security Rules, ensuring only you can access your information. We implement standard industry practices to protect your data.
+              We use Firebase for secure cloud storage and authentication. All user-generated content is isolated to your specific User ID via Firestore Security Rules. We implement standard encryption and access control protocols.
             </p>
           </div>
 
           <div>
             <h2 className="text-xl font-bold mb-2">4. Third-Party Services</h2>
-            <p className="text-sm leading-relaxed text-muted-foreground mb-2">
-              We utilize third-party services to power NotesAI:
-            </p>
             <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
-              <li><strong>Firebase:</strong> For hosting, authentication, and database.</li>
-              <li><strong>Google AI (Gemini):</strong> To process and extract action items from your transcripts.</li>
+              <li><strong>Firebase:</strong> For infrastructure, authentication, and data persistence.</li>
+              <li><strong>Google Generative AI:</strong> For automated transcript analysis.</li>
             </ul>
           </div>
 
           <div>
-            <h2 className="text-xl font-bold mb-2">5. AI and Data Privacy</h2>
+            <h2 className="text-xl font-bold mb-2">5. Your Privacy Rights</h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              Transcripts are sent to Google's Generative AI models for processing. We do not use your private transcripts to train generic public models. Your data remains isolated within your workflow.
+              You have full control over your data. You may delete your account, remove transcripts, or purge your task history at any time through the dashboard. All deletions are final and remove the data from our active Firestore database.
             </p>
           </div>
 
           <div>
-            <h2 className="text-xl font-bold mb-2">6. Your Rights</h2>
+            <h2 className="text-xl font-bold mb-2">6. Contact</h2>
             <p className="text-sm leading-relaxed text-muted-foreground">
-              You have the right to access, update, or delete your information at any time. You can manage your profile in the Account Settings and delete tasks directly from your repository.
-            </p>
-          </div>
-
-          <div>
-            <h2 className="text-xl font-bold mb-2">7. Changes to This Policy</h2>
-            <p className="text-sm leading-relaxed text-muted-foreground">
-              We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page.
+              For any privacy-related inquiries, please contact Siddesh B at <Link href="mailto:siddeshb.contact@gmail.com" className="text-primary font-medium">siddeshb.contact@gmail.com</Link>.
             </p>
           </div>
         </section>
