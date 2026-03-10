@@ -5,7 +5,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "UserProfile",
       "type": "object",
-      "description": "Represents a user profile within the application, storing supplementary information beyond basic authentication. Authentication details are managed externally by Firebase Authentication.",
+      "description": "Represents a user profile within the application, storing supplementary information beyond basic authentication.",
       "properties": {
         "id": {
           "type": "string",
@@ -22,7 +22,7 @@
         },
         "photoURL": {
           "type": "string",
-          "description": "The URL of the user's profile photo."
+          "description": "The Base64 encoded profile photo or URL."
         },
         "createdAt": {
           "type": "string",
@@ -45,19 +45,19 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Transcript",
       "type": "object",
-      "description": "Stores the content of a meeting transcript submitted by a user for action item extraction.",
+      "description": "Stores the content of a meeting transcript submitted by a user.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the Transcript entity. (Primary Key)"
+          "description": "Unique identifier for the Transcript entity."
         },
         "userId": {
           "type": "string",
-          "description": "Reference to the UserProfile who submitted this transcript. (Relationship: UserProfile 1:N Transcript)"
+          "description": "Reference to the UserProfile who submitted this transcript."
         },
         "title": {
           "type": "string",
-          "description": "An optional title or brief description for the meeting transcript."
+          "description": "An optional title for the meeting."
         },
         "content": {
           "type": "string",
@@ -80,60 +80,52 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Task",
       "type": "object",
-      "description": "Represents an action item extracted from a meeting transcript by the AI processing pipeline.",
+      "description": "Represents an action item extracted from a meeting transcript.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the Task entity. (Primary Key)"
+          "description": "Unique identifier for the Task entity."
         },
         "userId": {
           "type": "string",
-          "description": "Reference to the UserProfile who owns this task. (Relationship: UserProfile 1:N Task)"
+          "description": "Reference to the UserProfile who owns this task."
         },
         "transcriptId": {
           "type": "string",
-          "description": "Reference to the Transcript from which this task was extracted. (Relationship: Transcript 1:N Task)"
+          "description": "Reference to the Transcript from which this task was extracted."
         },
         "description": {
           "type": "string",
-          "description": "A clear description of the action item or task."
+          "description": "A clear description of the action item."
         },
         "owner": {
           "type": "string",
-          "description": "The person or entity assigned to complete the task."
+          "description": "The person assigned to complete the task."
         },
         "deadline": {
           "type": "string",
-          "description": "The specified deadline for the task, could be a date or a relative time (e.g., 'by Monday', 'this week')."
+          "description": "The specified deadline for the task."
         },
         "priority": {
           "type": "string",
-          "description": "Categorical priority level of the task (e.g., 'HIGH', 'MEDIUM', 'LOW')."
+          "description": "Categorical priority level (HIGH, MEDIUM, LOW)."
         },
         "priorityScore": {
           "type": "number",
-          "description": "Numerical priority score for the task, ranging from 0 to 100."
+          "description": "Numerical priority score (0-100)."
         },
         "confidenceScore": {
           "type": "number",
-          "description": "The AI model's confidence in the extraction of this task, ranging from 0 to 100."
-        },
-        "sourceSentence": {
-          "type": "string",
-          "description": "The original sentence from the transcript from which the task was extracted."
+          "description": "The AI model's confidence in the extraction (0-100)."
         },
         "status": {
           "type": "string",
-          "description": "The current status of the task (e.g., 'pending', 'completed')."
+          "description": "The current status (pending, completed)."
         },
         "createdAt": {
           "type": "string",
-          "description": "Timestamp when the task was extracted and created.",
+          "description": "Timestamp when the task was created.",
           "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "description": "Timestamp when the task was last updated (e.g., status change, edit)."
         }
       },
       "required": [
@@ -142,140 +134,14 @@
         "transcriptId",
         "description",
         "priority",
-        "priorityScore",
-        "confidenceScore",
-        "sourceSentence",
         "status",
         "createdAt"
-      ]
-    },
-    "Run": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Run",
-      "type": "object",
-      "description": "Records the metadata and high-level results of a single AI processing run for a meeting transcript.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the Run entity, also referred to as Run ID. (Primary Key)"
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to the UserProfile who initiated this processing run. (Relationship: UserProfile 1:N Run)"
-        },
-        "transcriptId": {
-          "type": "string",
-          "description": "Reference to the Transcript that was processed during this run. (Relationship: Transcript 1:N Run)"
-        },
-        "startedAt": {
-          "type": "string",
-          "description": "Timestamp when the AI processing run started.",
-          "format": "date-time"
-        },
-        "completedAt": {
-          "type": "string",
-          "description": "Timestamp when the AI processing run was completed, regardless of success or failure.",
-          "format": "date-time"
-        },
-        "status": {
-          "type": "string",
-          "description": "The overall status of the processing run (e.g., 'PENDING', 'COMPLETED', 'FAILED')."
-        },
-        "totalTasksExtracted": {
-          "type": "number",
-          "description": "The total number of action items extracted during this run."
-        },
-        "averageConfidenceScore": {
-          "type": "number",
-          "description": "The average confidence score of all tasks extracted in this run."
-        },
-        "processingTimeMs": {
-          "type": "number",
-          "description": "The total processing time for this run in milliseconds."
-        },
-        "errorDetails": {
-          "type": "string",
-          "description": "Details of any error that occurred during the run, if applicable."
-        },
-        "finalResultsSummary": {
-          "type": "string",
-          "description": "A summary of the final results produced by the AI workflow."
-        }
-      },
-      "required": [
-        "id",
-        "userId",
-        "transcriptId",
-        "startedAt",
-        "status"
-      ]
-    },
-    "LogEvent": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "LogEvent",
-      "type": "object",
-      "description": "Captures a single timestamped event or state transition within an AI processing workflow run.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the LogEvent entity. (Primary Key)"
-        },
-        "runId": {
-          "type": "string",
-          "description": "Reference to the Run entity this log event belongs to. (Relationship: Run 1:N LogEvent)"
-        },
-        "userId": {
-          "type": "string",
-          "description": "Reference to the UserProfile associated with the run that generated this log event. (Relationship: UserProfile 1:N LogEvent)"
-        },
-        "timestamp": {
-          "type": "string",
-          "description": "Timestamp when this log event occurred.",
-          "format": "date-time"
-        },
-        "eventType": {
-          "type": "string",
-          "description": "The type of event being logged (e.g., 'STATE_TRANSITION', 'TOOL_CALL', 'INFO', 'WARNING', 'ERROR')."
-        },
-        "message": {
-          "type": "string",
-          "description": "A human-readable message describing the log event."
-        },
-        "fromState": {
-          "type": "string",
-          "description": "The state from which the workflow transitioned, if eventType is 'STATE_TRANSITION'."
-        },
-        "toState": {
-          "type": "string",
-          "description": "The state to which the workflow transitioned, if eventType is 'STATE_TRANSITION'."
-        },
-        "toolName": {
-          "type": "string",
-          "description": "The name of the tool or service that was called, if eventType is 'TOOL_CALL'."
-        },
-        "details": {
-          "type": "string",
-          "description": "Additional JSON-stringified details or context relevant to this specific log event."
-        },
-        "errorDetails": {
-          "type": "string",
-          "description": "Specific error information if the eventType is 'ERROR'."
-        }
-      },
-      "required": [
-        "id",
-        "runId",
-        "userId",
-        "timestamp",
-        "eventType",
-        "message"
       ]
     }
   },
   "auth": {
     "providers": [
-      "password",
-      "anonymous"
+      "password"
     ]
   },
   "firestore": {
@@ -287,13 +153,7 @@
           "schema": {
             "$ref": "#/backend/entities/UserProfile"
           },
-          "description": "Stores supplementary user profile information. The document ID (`{userId}`) for a UserProfile document must match the authenticated user's ID (`request.auth.uid`).",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user, matching their Firebase Authentication UID."
-            }
-          ]
+          "description": "Stores user profile information."
         }
       },
       {
@@ -303,17 +163,7 @@
           "schema": {
             "$ref": "#/backend/entities/Transcript"
           },
-          "description": "Stores meeting transcripts submitted by a user. Includes denormalized 'userId' field for authorization independence, which must match the path 'userId' for secure access.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user who owns this transcript."
-            },
-            {
-              "name": "transcriptId",
-              "description": "The unique identifier for a specific meeting transcript."
-            }
-          ]
+          "description": "Stores meeting transcripts for a user."
         }
       },
       {
@@ -323,64 +173,9 @@
           "schema": {
             "$ref": "#/backend/entities/Task"
           },
-          "description": "Stores action items extracted by the AI processing pipeline. Includes denormalized 'userId' field for authorization independence, which must match the path 'userId' for secure access.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user who owns this task."
-            },
-            {
-              "name": "taskId",
-              "description": "The unique identifier for a specific extracted task."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/runs/{runId}",
-        "definition": {
-          "entityName": "Run",
-          "schema": {
-            "$ref": "#/backend/entities/Run"
-          },
-          "description": "Stores metadata and high-level results of an AI processing run for a transcript. Includes denormalized 'userId' field for authorization independence, which must match the path 'userId' for secure access.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user who initiated this AI run."
-            },
-            {
-              "name": "runId",
-              "description": "The unique identifier for a specific AI processing run."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/users/{userId}/runs/{runId}/logEvents/{logEventId}",
-        "definition": {
-          "entityName": "LogEvent",
-          "schema": {
-            "$ref": "#/backend/entities/LogEvent"
-          },
-          "description": "Captures detailed timestamped events and state transitions for a specific AI processing run. Includes denormalized 'userId' and 'runId' fields for authorization independence, which must match the path wildcards for secure access.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier of the user associated with the run that generated this log event."
-            },
-            {
-              "name": "runId",
-              "description": "The unique identifier of the AI processing run to which this log event belongs."
-            },
-            {
-              "name": "logEventId",
-              "description": "The unique identifier for a specific log event."
-            }
-          ]
+          "description": "Stores tasks extracted for a user."
         }
       }
-    ],
-    "reasoning": "The recommended Firestore structure prioritizes strict user-based ownership and authorization independence, adhering to the core design principles. All user-specific data is nested under a top-level `/users/{userId}` collection. This strategy creates an explicit, intuitive hierarchy that mirrors the application's single-user data ownership model.\n\n**Authorization Independence (CRITICAL):** Each document (`UserProfile`, `Transcript`, `Task`, `Run`, `LogEvent`) is designed to contain its `userId` (and `runId` for `LogEvent`) directly within the document data itself, in addition to being part of its path. For example, a `Task` document located at `/users/{userId}/tasks/{taskId}` will also have a `userId` field within its data. This denormalization is crucial: Firebase Security Rules can check `request.auth.uid == resource.data.userId` without needing a `get()` operation to a parent document or a separate user profile, thus enabling atomic operations and simplifying rule logic. This completely eliminates hierarchical authorization dependencies, making rules robust and easily debuggable.\n\n**Clarity of Intent (Debuggability):** The path structure `users/{userId}/...` explicitly states that all data within this segment belongs to the specified user. This makes authorization rules incredibly clear (e.g., `allow read, write: request.auth.uid == userId;`).\n\n**DBAC (No Custom Claims):** User roles (if any were present) would be stored as fields within the `UserProfile` document, but in this application, all data is private to the user, so no roles beyond owner are required.\n\n**QAPs (Rules are not Filters):** By segregating all user data under `/users/{userId}/...`, list operations inherently retrieve only the authenticated user's data. For instance, a query on `/users/{request.auth.uid}/tasks` will only return tasks owned by the current user. The security rules will enforce that `request.auth.uid` matches the `{userId}` wildcard in the path, ensuring that `list` operations are implicitly filtered by the security context, satisfying the QAP principle without requiring complex `where` clauses in rules.\n\n**Structural Segregation:** Each collection (`/users`, `/users/{userId}/transcripts`, `/users/{userId}/tasks`, `/users/{userId}/runs`, `/users/{userId}/runs/{runId}/logEvents`) holds documents with a homogeneous security posture – they are all privately owned by the associated user. This prevents mixing data with different access requirements, further simplifying security rules.\n\n**Access Modeling:** The design exclusively uses Path-Based ownership (`/users/{userId}/data`) and continues this hierarchy for nested data (`/users/{userId}/runs/{runId}/logEvents`). This is the most secure and straightforward model for private user data."
+    ]
   }
 }

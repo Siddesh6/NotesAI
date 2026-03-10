@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -60,10 +61,6 @@ export function ProfileSettings({ db, userId, currentProfile }: ProfileSettingsP
     reader.onload = (event) => {
       const result = event.target?.result as string;
       setPhotoURL(result);
-      toast({
-        title: "Photo selected",
-        description: "Click 'Save Changes' to update your profile photo.",
-      });
     };
     reader.readAsDataURL(file);
   };
