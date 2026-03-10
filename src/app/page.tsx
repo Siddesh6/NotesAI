@@ -1,40 +1,43 @@
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle, Zap, FileText, ArrowRight, Linkedin, Mail, Cpu } from 'lucide-react';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function LandingPage() {
   const heroImage = PlaceHolderImages.find(img => img.id === 'hero-meeting');
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <header className="px-4 lg:px-6 h-16 flex items-center border-b bg-white/50 backdrop-blur-md sticky top-0 z-50">
+    <div className="flex flex-col min-h-screen transition-colors">
+      <header className="px-4 lg:px-6 h-16 flex items-center border-b bg-white/50 dark:bg-background/50 backdrop-blur-md sticky top-0 z-50">
         <Link className="flex items-center justify-center space-x-2" href="/">
           <div className="bg-primary rounded-lg p-1.5">
             < Zap className="h-5 w-5 text-white" />
           </div>
           <span className="font-headline font-bold text-xl tracking-tight text-primary">NotesAI</span>
         </Link>
-        <nav className="ml-auto flex gap-4 sm:gap-6">
-          <Link className="text-sm font-medium hover:text-primary transition-colors" href="#features">
+        <nav className="ml-auto flex items-center gap-4 sm:gap-6">
+          <Link className="text-sm font-medium hover:text-primary transition-colors hidden sm:block" href="#features">
             Features
           </Link>
-          <Link className="text-sm font-medium hover:text-primary transition-colors" href="/dashboard">
-            Dashboard
+          <Link className="text-sm font-medium hover:text-primary transition-colors" href="/about">
+            About Us
           </Link>
+          <ThemeToggle />
           <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex">
-            <Link href="/dashboard">Sign In</Link>
+            <Link href="/login">Sign In</Link>
           </Button>
           <Button asChild size="sm" className="bg-primary hover:bg-primary/90">
-            <Link href="/dashboard">Get Started</Link>
+            <Link href="/signup">Get Started</Link>
           </Button>
         </nav>
       </header>
 
       <main className="flex-1">
-        <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 bg-gradient-to-b from-secondary/50 to-background">
+        <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 bg-gradient-to-b from-secondary/50 to-background dark:from-secondary/10 dark:to-background">
           <div className="container px-4 md:px-6 mx-auto">
             <div className="grid gap-6 lg:grid-cols-[1fr_500px] lg:gap-12 xl:grid-cols-[1fr_600px] items-center">
               <div className="flex flex-col justify-center space-y-4">
@@ -57,7 +60,7 @@ export default function LandingPage() {
                   </Button>
                 </div>
               </div>
-              <div className="mx-auto aspect-video overflow-hidden rounded-2xl shadow-2xl lg:order-last">
+              <div className="mx-auto aspect-video overflow-hidden rounded-2xl shadow-2xl lg:order-last border dark:border-border/50">
                 {heroImage && (
                   <Image
                     src={heroImage.imageUrl}
@@ -73,7 +76,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section id="features" className="w-full py-20 bg-white">
+        <section id="features" className="w-full py-20 bg-white dark:bg-background/50">
           <div className="container px-4 md:px-6 mx-auto">
             <div className="flex flex-col items-center justify-center space-y-4 text-center mb-12">
               <h2 className="text-3xl font-headline font-bold tracking-tighter sm:text-4xl text-primary">
@@ -84,7 +87,7 @@ export default function LandingPage() {
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <Card className="border-none shadow-md bg-background/50 hover:shadow-lg transition-all">
+              <Card className="border-none shadow-md bg-background/50 dark:bg-card hover:shadow-lg transition-all">
                 <CardContent className="pt-6">
                   <div className="mb-4 bg-accent/10 w-12 h-12 rounded-lg flex items-center justify-center">
                     <FileText className="h-6 w-6 text-accent" />
@@ -93,7 +96,7 @@ export default function LandingPage() {
                   <p className="text-muted-foreground">Upload any meeting transcript. Our AI parses sentences to find actionable commitments.</p>
                 </CardContent>
               </Card>
-              <Card className="border-none shadow-md bg-background/50 hover:shadow-lg transition-all">
+              <Card className="border-none shadow-md bg-background/50 dark:bg-card hover:shadow-lg transition-all">
                 <CardContent className="pt-6">
                   <div className="mb-4 bg-accent/10 w-12 h-12 rounded-lg flex items-center justify-center">
                     <CheckCircle className="h-6 w-6 text-accent" />
@@ -102,7 +105,7 @@ export default function LandingPage() {
                   <p className="text-muted-foreground">Automatically identify task owners, specific tasks, and deadlines mentioned in conversation.</p>
                 </CardContent>
               </Card>
-              <Card className="border-none shadow-md bg-background/50 hover:shadow-lg transition-all">
+              <Card className="border-none shadow-md bg-background/50 dark:bg-card hover:shadow-lg transition-all">
                 <CardContent className="pt-6">
                   <div className="mb-4 bg-accent/10 w-12 h-12 rounded-lg flex items-center justify-center">
                     < Zap className="h-6 w-6 text-accent" />
@@ -116,10 +119,10 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="w-full border-t py-12 bg-white">
+      <footer className="w-full border-t py-12 bg-white dark:bg-background">
         <div className="container px-4 md:px-6 mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 items-start">
-            <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 items-start">
+            <div className="space-y-4 md:col-span-2">
               <Link className="flex items-center space-x-2" href="/">
                 <div className="bg-primary rounded-lg p-1.5">
                   <Zap className="h-5 w-5 text-white" />
@@ -129,7 +132,7 @@ export default function LandingPage() {
               <p className="text-sm text-muted-foreground max-w-xs">
                 Revolutionizing how teams turn conversations into actionable progress with the power of GenAI.
               </p>
-              <div className="flex items-center space-x-2 text-[10px] text-muted-foreground uppercase tracking-widest bg-secondary/30 px-3 py-1.5 rounded-full w-fit">
+              <div className="flex items-center space-x-2 text-[10px] text-muted-foreground uppercase tracking-widest bg-secondary/30 dark:bg-secondary/10 px-3 py-1.5 rounded-full w-fit">
                 <Cpu className="h-3 w-3" />
                 <span>AI-Powered Application</span>
               </div>
@@ -154,6 +157,9 @@ export default function LandingPage() {
             <div className="space-y-4">
               <h4 className="text-sm font-bold uppercase tracking-wider text-primary">Quick Links</h4>
               <nav className="flex flex-col space-y-2">
+                <Link className="text-xs hover:underline underline-offset-4 text-muted-foreground" href="/about">
+                  About Us
+                </Link>
                 <Link className="text-xs hover:underline underline-offset-4 text-muted-foreground" href="/terms">
                   Terms of Service
                 </Link>

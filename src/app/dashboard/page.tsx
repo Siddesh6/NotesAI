@@ -32,6 +32,7 @@ import { TaskTable } from '@/components/dashboard/task-table';
 import { MetricsPanel } from '@/components/dashboard/metrics-panel';
 import { LogsViewer } from '@/components/dashboard/logs-viewer';
 import { ProfileSettings } from '@/components/dashboard/profile-settings';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function Dashboard() {
   const { user, isUserLoading } = useUser();
@@ -282,41 +283,43 @@ export default function Dashboard() {
 
   if (isUserLoading) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex h-screen items-center justify-center bg-background">
         <Zap className="h-8 w-8 text-primary animate-pulse" />
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen bg-secondary/10 overflow-hidden">
+    <div className="flex h-screen bg-secondary/10 dark:bg-background overflow-hidden transition-colors">
       {/* Sidebar */}
-      <aside className="w-64 border-r bg-white hidden md:flex flex-col shadow-sm">
+      <aside className="w-64 border-r bg-white dark:bg-card hidden md:flex flex-col shadow-sm">
         <div className="p-6 border-b flex items-center space-x-3">
-          <div className="bg-primary rounded-xl p-2 shadow-lg shadow-primary/20">
-            <Zap className="h-5 w-5 text-white" />
-          </div>
-          <span className="font-headline font-bold text-xl text-primary tracking-tight">NotesAI</span>
+          <Link href="/" className="flex items-center space-x-3">
+            <div className="bg-primary rounded-xl p-2 shadow-lg shadow-primary/20">
+              <Zap className="h-5 w-5 text-white" />
+            </div>
+            <span className="font-headline font-bold text-xl text-primary tracking-tight">NotesAI</span>
+          </Link>
         </div>
         <nav className="flex-1 p-4 space-y-2 mt-4">
-          <Button variant="ghost" className="w-full justify-start bg-secondary/50 text-primary font-semibold" asChild>
+          <Button variant="ghost" className="w-full justify-start bg-secondary/50 dark:bg-secondary/10 text-primary font-semibold" asChild>
             <div className="flex items-center">
               <LayoutDashboard className="mr-3 h-4 w-4" />
               Overview
             </div>
           </Button>
-          <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:bg-secondary/30">
+          <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:bg-secondary/30 dark:hover:bg-secondary/10">
             <ClipboardList className="mr-3 h-4 w-4" />
             Active Tasks
           </Button>
-          <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:bg-secondary/30">
+          <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:bg-secondary/30 dark:hover:bg-secondary/10">
             <Clock className="mr-3 h-4 w-4" />
             Run History
           </Button>
           <ProfileSettings db={db!} userId={user?.uid || ''} currentProfile={profile} />
         </nav>
         <div className="p-4 border-t mt-auto">
-          <div className="bg-secondary/20 p-4 rounded-xl mb-4">
+          <div className="bg-secondary/20 dark:bg-secondary/5 p-4 rounded-xl mb-4">
              <div className="flex items-center mb-2">
                 <Avatar className="h-8 w-8 mr-3">
                   <AvatarImage src={profile?.photoURL} />
@@ -343,13 +346,14 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-16 border-b bg-white flex items-center justify-between px-8 shadow-sm z-10">
+        <header className="h-16 border-b bg-white dark:bg-card flex items-center justify-between px-8 shadow-sm z-10">
           <div className="flex items-center space-x-2">
             <h2 className="text-lg font-headline font-bold text-primary">Workspace</h2>
             <ChevronRight className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium text-muted-foreground">Action Item Extractor</span>
           </div>
           <div className="flex items-center space-x-3">
+             <ThemeToggle />
              <DropdownMenu>
                <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="border-accent text-accent hover:bg-accent/5">
@@ -370,7 +374,7 @@ export default function Dashboard() {
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8 space-y-12 bg-secondary/5">
+        <div className="flex-1 overflow-y-auto p-8 space-y-12 bg-secondary/5 dark:bg-background/50">
           <div className="max-w-7xl mx-auto space-y-12">
             
             {/* Input Section */}
@@ -401,7 +405,7 @@ export default function Dashboard() {
                 <div className="relative group">
                   <Textarea
                     placeholder="Rahul will prepare the presentation by Monday. We need to finalize the budget by next Friday..."
-                    className="min-h-[220px] resize-none focus-visible:ring-accent font-body bg-white border-none shadow-xl shadow-primary/5 p-6 rounded-2xl"
+                    className="min-h-[220px] resize-none focus-visible:ring-accent font-body bg-white dark:bg-card border-none shadow-xl shadow-primary/5 p-6 rounded-2xl"
                     value={transcript}
                     onChange={(e) => setTranscript(e.target.value)}
                     disabled={isProcessing}
@@ -429,7 +433,7 @@ export default function Dashboard() {
               </div>
 
               <div className="xl:col-span-1">
-                 <div className="bg-white rounded-2xl p-6 shadow-xl shadow-primary/5 h-full border border-border/50">
+                 <div className="bg-white dark:bg-card rounded-2xl p-6 shadow-xl shadow-primary/5 h-full border border-border/50">
                     <h3 className="font-bold text-primary mb-4 flex items-center">
                        <Clock className="mr-2 h-4 w-4 text-accent" />
                        Quick Stats
@@ -447,7 +451,7 @@ export default function Dashboard() {
                           <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mb-3">AI Engine Health</p>
                           <div className="flex space-x-1.5">
                              {[1, 2, 3, 4, 5, 6, 7].map(i => (
-                                <div key={i} className="flex-1 h-8 bg-emerald-100 rounded-sm flex items-center justify-center">
+                                <div key={i} className="flex-1 h-8 bg-emerald-100 dark:bg-emerald-900/20 rounded-sm flex items-center justify-center">
                                    <div className="h-4 w-0.5 bg-emerald-500 opacity-50" />
                                 </div>
                              ))}
