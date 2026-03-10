@@ -17,9 +17,7 @@ import {
   ChevronRight,
   Loader2,
   Share2,
-  FileUp,
-  FileText,
-  File
+  FileUp
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -68,7 +66,7 @@ export default function Dashboard() {
     }
   }, [user, isUserLoading, router]);
 
-  const createLog = (runId: string, type: string, message: string, details?: string) => {
+  const createLog = (runId: string, type: string, message: string, details?: string | null) => {
     if (!user?.uid || !db) return;
     const logId = crypto.randomUUID();
     const logRef = doc(db, 'users', user.uid, 'runs', runId, 'logEvents', logId);
@@ -93,8 +91,6 @@ export default function Dashboard() {
         title: "PDF Detected",
         description: "Standard PDF parsing is active. Complex layouts may vary.",
       });
-      // In a real app, you'd use a PDF parsing library. 
-      // Here we simulate loading or direct text read if it's text-based.
       setTranscript(`[File Uploaded: ${file.name}]\nProcessing PDF content... (Simulation)`);
     } else if (file.type === 'text/plain') {
       const reader = new FileReader();
@@ -238,13 +234,23 @@ export default function Dashboard() {
     toast({ title: "Export Started", description: `Exporting ${tasks.length} tasks as ${format.toUpperCase()}` });
   };
 
-  const handleShare = () => {
+  const handleShare = async () => {
+    const shareData = {
+      title: 'Meeting Action Items',
+      text: `Check out these ${tasks.length} action items I extracted with NotesAI!`,
+      url: window.location.href,
+    };
+
     if (navigator.share) {
-      navigator.share({
-        title: 'Meeting Action Items',
-        text: `Check out these ${tasks.length} action items I extracted with NotesAI!`,
-        url: window.location.href,
-      }).catch(console.error);
+      try {
+        await navigator.share(shareData);
+      } catch (err: any) {
+        // Fallback if sharing is cancelled or fails
+        if (err.name !== 'AbortError') {
+          navigator.clipboard.writeText(window.location.href);
+          toast({ title: "Link Copied", description: "Sharing failed. Link copied to clipboard instead." });
+        }
+      }
     } else {
       navigator.clipboard.writeText(window.location.href);
       toast({ title: "Link Copied", description: "Dashboard link copied to clipboard." });
@@ -404,7 +410,7 @@ export default function Dashboard() {
                     <div className="space-y-6">
                        <div className="flex items-center justify-between">
                           <span className="text-sm text-muted-foreground">Total Runs</span>
-                          <span className="text-sm font-bold text-primary">{logsData ? 1 : 0}</span>
+                          <span className="text-sm font-bold text-primary">{logsData ? logsData.length : 0}</span>
                        </div>
                        <div className="flex items-center justify-between">
                           <span className="text-sm text-muted-foreground">Active Tasks</span>
