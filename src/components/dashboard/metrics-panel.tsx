@@ -87,21 +87,22 @@ export function MetricsPanel({ tasks }: MetricsPanelProps) {
   }, [tasks]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <Card className="shadow-sm border-none bg-white">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+      <Card className="shadow-sm border-none bg-white dark:bg-card">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-            Task Priority Distribution
+          <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground uppercase tracking-wider">
+            Task Priorities
           </CardTitle>
         </CardHeader>
-        <CardContent className="h-[200px]">
+        <CardContent className="h-[200px] md:h-[250px]">
           <ChartContainer config={priorityConfig}>
             <BarChart data={priorityData}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" className="dark:stroke-border/20" />
               <XAxis 
                 dataKey="label" 
                 axisLine={false} 
-                tickLine={false} 
+                tickLine={false}
+                fontSize={10}
               />
               <YAxis hide />
               <ChartTooltip content={<ChartTooltipContent hideLabel />} />
@@ -111,56 +112,56 @@ export function MetricsPanel({ tasks }: MetricsPanelProps) {
         </CardContent>
       </Card>
 
-      <Card className="shadow-sm border-none bg-white">
+      <Card className="shadow-sm border-none bg-white dark:bg-card">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-            Completion Status
+          <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground uppercase tracking-wider">
+            Status Breakdown
           </CardTitle>
         </CardHeader>
-        <CardContent className="h-[200px] flex items-center justify-center">
+        <CardContent className="h-[200px] md:h-[250px] flex items-center justify-center">
           <ChartContainer config={completionConfig}>
             <PieChart>
               <Pie
                 data={completionData}
                 cx="50%"
                 cy="50%"
-                innerRadius={60}
-                outerRadius={80}
+                innerRadius={50}
+                outerRadius={70}
                 paddingAngle={5}
                 dataKey="value"
                 nameKey="status"
               />
               <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-              <Legend verticalAlign="bottom" height={36} />
+              <Legend verticalAlign="bottom" height={36} iconSize={8} wrapperStyle={{ fontSize: '10px' }} />
             </PieChart>
           </ChartContainer>
         </CardContent>
       </Card>
 
-      <Card className="shadow-sm border-none bg-white">
+      <Card className="shadow-sm border-none bg-white dark:bg-card md:col-span-2 lg:col-span-1">
         <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-            Performance Overview
+          <CardTitle className="text-xs md:text-sm font-medium text-muted-foreground uppercase tracking-wider">
+            Overall Health
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-4 space-y-6">
           <div className="flex justify-between items-end">
             <div>
-              <p className="text-3xl font-bold text-primary">{tasks.length}</p>
-              <p className="text-xs text-muted-foreground">Total Tasks</p>
+              <p className="text-2xl md:text-3xl font-bold text-primary">{tasks.length}</p>
+              <p className="text-[10px] md:text-xs text-muted-foreground">Total Tasks</p>
             </div>
             <div className="text-right">
-              <p className="text-3xl font-bold text-accent">{avgConfidence}%</p>
-              <p className="text-xs text-muted-foreground">Avg. Confidence</p>
+              <p className="text-2xl md:text-3xl font-bold text-accent">{avgConfidence}%</p>
+              <p className="text-[10px] md:text-xs text-muted-foreground">Avg. Confidence</p>
             </div>
           </div>
           
           <div className="space-y-2">
-            <div className="flex justify-between text-xs font-medium">
+            <div className="flex justify-between text-[10px] md:text-xs font-medium">
               <span>Overall Progress</span>
               <span>{tasks.length > 0 ? Math.round((tasks.filter(t => t.status === 'completed').length / tasks.length) * 100) : 0}%</span>
             </div>
-            <div className="h-2 bg-secondary rounded-full overflow-hidden">
+            <div className="h-2 bg-secondary dark:bg-secondary/20 rounded-full overflow-hidden">
                <div 
                  className="h-full bg-chart-3 transition-all duration-500" 
                  style={{ width: `${tasks.length > 0 ? (tasks.filter(t => t.status === 'completed').length / tasks.length) * 100 : 0}%` }}

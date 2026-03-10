@@ -5,6 +5,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useAuth, useFirestore, useUser, useCollection, useDoc, useMemoFirebase, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, doc, query, orderBy } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -20,6 +21,8 @@ import {
   Loader2,
   Share2,
   FileUp,
+  Menu,
+  ChevronDown
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -27,6 +30,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { useToast } from '@/hooks/use-toast';
 import { TaskTable } from '@/components/dashboard/task-table';
 import { MetricsPanel } from '@/components/dashboard/metrics-panel';
@@ -289,76 +297,95 @@ export default function Dashboard() {
     );
   }
 
+  const SidebarContent = () => (
+    <div className="flex flex-col h-full bg-white dark:bg-card">
+      <div className="p-6 border-b flex items-center space-x-3">
+        <Link href="/" className="flex items-center space-x-3">
+          <div className="bg-primary rounded-xl p-2 shadow-lg shadow-primary/20">
+            <Zap className="h-5 w-5 text-white" />
+          </div>
+          <span className="font-headline font-bold text-xl text-primary tracking-tight">NotesAI</span>
+        </Link>
+      </div>
+      <nav className="flex-1 p-4 space-y-2 mt-4">
+        <Button variant="ghost" className="w-full justify-start bg-secondary/50 dark:bg-secondary/10 text-primary font-semibold">
+          <LayoutDashboard className="mr-3 h-4 w-4" />
+          Overview
+        </Button>
+        <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:bg-secondary/30 dark:hover:bg-secondary/10">
+          <ClipboardList className="mr-3 h-4 w-4" />
+          Active Tasks
+        </Button>
+        <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:bg-secondary/30 dark:hover:bg-secondary/10">
+          <Clock className="mr-3 h-4 w-4" />
+          Run History
+        </Button>
+        <ProfileSettings db={db!} userId={user?.uid || ''} currentProfile={profile} />
+      </nav>
+      <div className="p-4 border-t mt-auto">
+        <div className="bg-secondary/20 dark:bg-secondary/5 p-4 rounded-xl mb-4">
+           <div className="flex items-center mb-2">
+              <Avatar className="h-8 w-8 mr-3">
+                <AvatarImage src={profile?.photoURL} />
+                <AvatarFallback className="bg-accent text-white font-bold text-xs">
+                  {profile?.displayName?.charAt(0) || user?.email?.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="overflow-hidden">
+                 <p className="text-xs font-bold text-primary truncate">{profile?.displayName || 'User'}</p>
+                 <p className="text-[10px] text-muted-foreground truncate">{user?.email}</p>
+              </div>
+           </div>
+        </div>
+        <Button 
+          variant="ghost" 
+          onClick={handleSignOut}
+          className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+        >
+          <LogOut className="mr-3 h-4 w-4" />
+          Sign Out
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="flex h-screen bg-secondary/10 dark:bg-background overflow-hidden transition-colors">
-      {/* Sidebar */}
+      {/* Sidebar Desktop */}
       <aside className="w-64 border-r bg-white dark:bg-card hidden md:flex flex-col shadow-sm">
-        <div className="p-6 border-b flex items-center space-x-3">
-          <Link href="/" className="flex items-center space-x-3">
-            <div className="bg-primary rounded-xl p-2 shadow-lg shadow-primary/20">
-              <Zap className="h-5 w-5 text-white" />
-            </div>
-            <span className="font-headline font-bold text-xl text-primary tracking-tight">NotesAI</span>
-          </Link>
-        </div>
-        <nav className="flex-1 p-4 space-y-2 mt-4">
-          <Button variant="ghost" className="w-full justify-start bg-secondary/50 dark:bg-secondary/10 text-primary font-semibold" asChild>
-            <div className="flex items-center">
-              <LayoutDashboard className="mr-3 h-4 w-4" />
-              Overview
-            </div>
-          </Button>
-          <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:bg-secondary/30 dark:hover:bg-secondary/10">
-            <ClipboardList className="mr-3 h-4 w-4" />
-            Active Tasks
-          </Button>
-          <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:bg-secondary/30 dark:hover:bg-secondary/10">
-            <Clock className="mr-3 h-4 w-4" />
-            Run History
-          </Button>
-          <ProfileSettings db={db!} userId={user?.uid || ''} currentProfile={profile} />
-        </nav>
-        <div className="p-4 border-t mt-auto">
-          <div className="bg-secondary/20 dark:bg-secondary/5 p-4 rounded-xl mb-4">
-             <div className="flex items-center mb-2">
-                <Avatar className="h-8 w-8 mr-3">
-                  <AvatarImage src={profile?.photoURL} />
-                  <AvatarFallback className="bg-accent text-white font-bold text-xs">
-                    {profile?.displayName?.charAt(0) || user?.email?.charAt(0)}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="overflow-hidden">
-                   <p className="text-xs font-bold text-primary truncate">{profile?.displayName || 'User'}</p>
-                   <p className="text-[10px] text-muted-foreground truncate">{user?.email}</p>
-                </div>
-             </div>
-          </div>
-          <Button 
-            variant="ghost" 
-            onClick={handleSignOut}
-            className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-          >
-            <LogOut className="mr-3 h-4 w-4" />
-            Sign Out
-          </Button>
-        </div>
+        <SidebarContent />
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-16 border-b bg-white dark:bg-card flex items-center justify-between px-8 shadow-sm z-10">
-          <div className="flex items-center space-x-2">
-            <h2 className="text-lg font-headline font-bold text-primary">Workspace</h2>
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-muted-foreground">Action Item Extractor</span>
+        <header className="h-16 border-b bg-white dark:bg-card flex items-center justify-between px-4 md:px-8 shadow-sm z-50">
+          <div className="flex items-center space-x-2 md:space-x-4">
+            {/* Mobile Sidebar Trigger */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden">
+                  <Menu className="h-5 w-5 text-primary" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="p-0 w-72">
+                <SidebarContent />
+              </SheetContent>
+            </Sheet>
+            
+            <div className="flex items-center space-x-2">
+              <h2 className="text-sm md:text-lg font-headline font-bold text-primary">Workspace</h2>
+              <ChevronRight className="h-4 w-4 text-muted-foreground hidden sm:block" />
+              <span className="text-xs md:text-sm font-medium text-muted-foreground hidden sm:block">Extractor</span>
+            </div>
           </div>
-          <div className="flex items-center space-x-3">
+          
+          <div className="flex items-center space-x-2 md:space-x-3">
              <ThemeToggle />
              <DropdownMenu>
                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="border-accent text-accent hover:bg-accent/5">
-                    <Download className="mr-2 h-4 w-4" />
-                    Export
+                  <Button variant="outline" size="sm" className="border-accent text-accent hover:bg-accent/5 h-8 md:h-9 px-2 md:px-4">
+                    <Download className="md:mr-2 h-4 w-4" />
+                    <span className="hidden sm:inline">Export</span>
                   </Button>
                </DropdownMenuTrigger>
                <DropdownMenuContent align="end">
@@ -367,25 +394,25 @@ export default function Dashboard() {
                  <DropdownMenuItem onClick={() => handleExport('pdf')}>Export as PDF</DropdownMenuItem>
                </DropdownMenuContent>
              </DropdownMenu>
-             <Button size="sm" onClick={() => { setTranscript(''); setCurrentRunId(null); }} className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20">
-                <Plus className="mr-2 h-4 w-4" />
-                New Run
+             <Button size="sm" onClick={() => { setTranscript(''); setCurrentRunId(null); }} className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 h-8 md:h-9 px-2 md:px-4">
+                <Plus className="md:mr-2 h-4 w-4" />
+                <span className="hidden sm:inline">New Run</span>
              </Button>
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8 space-y-12 bg-secondary/5 dark:bg-background/50">
-          <div className="max-w-7xl mx-auto space-y-12">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8 md:space-y-12 bg-secondary/5 dark:bg-background/50">
+          <div className="max-w-7xl mx-auto space-y-8 md:space-y-12">
             
             {/* Input Section */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
               <div className="xl:col-span-2 space-y-4">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
                    <div>
-                      <h3 className="text-xl font-bold text-primary">New Transcript</h3>
-                      <p className="text-sm text-muted-foreground">Upload or paste your meeting notes.</p>
+                      <h3 className="text-lg md:text-xl font-bold text-primary">New Transcript</h3>
+                      <p className="text-xs md:text-sm text-muted-foreground">Upload or paste meeting notes.</p>
                    </div>
-                   <div className="flex items-center space-x-2">
+                   <div className="flex items-center gap-2">
                       <input 
                         type="file" 
                         ref={fileInputRef} 
@@ -393,19 +420,19 @@ export default function Dashboard() {
                         accept=".txt,.pdf" 
                         onChange={handleFileUpload}
                       />
-                      <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="text-primary border-primary/20 hover:bg-primary/5">
+                      <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="text-primary border-primary/20 hover:bg-primary/5 text-xs h-8">
                         <FileUp className="mr-2 h-4 w-4" />
-                        Upload File (.txt, .pdf)
+                        <span className="hidden xs:inline">Upload</span>
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={handleDemo} className="text-accent hover:text-accent hover:bg-accent/10">
-                        Try Demo Text
+                      <Button variant="ghost" size="sm" onClick={handleDemo} className="text-accent hover:text-accent hover:bg-accent/10 text-xs h-8">
+                        Try Demo
                       </Button>
                    </div>
                 </div>
                 <div className="relative group">
                   <Textarea
-                    placeholder="Rahul will prepare the presentation by Monday. We need to finalize the budget by next Friday..."
-                    className="min-h-[220px] resize-none focus-visible:ring-accent font-body bg-white dark:bg-card border-none shadow-xl shadow-primary/5 p-6 rounded-2xl"
+                    placeholder="Rahul will prepare the presentation by Monday..."
+                    className="min-h-[180px] md:min-h-[220px] resize-none focus-visible:ring-accent font-body bg-white dark:bg-card border-none shadow-xl shadow-primary/5 p-4 md:p-6 rounded-2xl text-sm md:text-base"
                     value={transcript}
                     onChange={(e) => setTranscript(e.target.value)}
                     disabled={isProcessing}
@@ -414,7 +441,7 @@ export default function Dashboard() {
                     <Button 
                       onClick={handleExtract} 
                       disabled={isProcessing || !transcript.trim()}
-                      className="bg-accent hover:bg-accent/90 shadow-lg shadow-accent/20 rounded-xl px-6"
+                      className="bg-accent hover:bg-accent/90 shadow-lg shadow-accent/20 rounded-xl px-4 md:px-6 h-9 md:h-10 text-xs md:text-sm"
                     >
                       {isProcessing ? (
                         <>
@@ -438,7 +465,7 @@ export default function Dashboard() {
                        <Clock className="mr-2 h-4 w-4 text-accent" />
                        Quick Stats
                     </h3>
-                    <div className="space-y-6">
+                    <div className="space-y-4 md:space-y-6">
                        <div className="flex items-center justify-between">
                           <span className="text-sm text-muted-foreground">Total Runs</span>
                           <span className="text-sm font-bold text-primary">{logsData ? logsData.length : 0}</span>
@@ -449,10 +476,10 @@ export default function Dashboard() {
                        </div>
                        <div className="pt-4 border-t">
                           <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mb-3">AI Engine Health</p>
-                          <div className="flex space-x-1.5">
+                          <div className="flex space-x-1">
                              {[1, 2, 3, 4, 5, 6, 7].map(i => (
-                                <div key={i} className="flex-1 h-8 bg-emerald-100 dark:bg-emerald-900/20 rounded-sm flex items-center justify-center">
-                                   <div className="h-4 w-0.5 bg-emerald-500 opacity-50" />
+                                <div key={i} className="flex-1 h-6 bg-emerald-100 dark:bg-emerald-900/20 rounded-sm flex items-center justify-center">
+                                   <div className="h-3 w-0.5 bg-emerald-500 opacity-50" />
                                 </div>
                              ))}
                           </div>
@@ -465,10 +492,10 @@ export default function Dashboard() {
 
             {/* Workflow Visualization */}
             {(isProcessing || activeStep === 'RUN_COMPLETE') && (
-              <div className="space-y-6 animate-in fade-in duration-500 relative z-20">
+              <div className="space-y-4 md:space-y-6 animate-in fade-in duration-500">
                 <div className="flex items-center justify-between">
-                   <h3 className="text-xl font-bold text-primary">Execution Pipeline</h3>
-                   <span className="text-xs font-mono text-muted-foreground">RUN_ID: {currentRunId?.slice(0, 8)}</span>
+                   <h3 className="text-lg md:text-xl font-bold text-primary">Execution Pipeline</h3>
+                   <span className="text-[10px] md:text-xs font-mono text-muted-foreground">RUN_ID: {currentRunId?.slice(0, 8)}</span>
                 </div>
                 <LogsViewer logs={logs} activeStep={activeStep} />
               </div>
@@ -476,40 +503,42 @@ export default function Dashboard() {
 
             {/* Metrics Dashboard */}
             {tasks.length > 0 && (
-              <div className="space-y-6 relative z-10">
-                <h3 className="text-xl font-bold text-primary">Analytics Dashboard</h3>
+              <div className="space-y-6">
+                <h3 className="text-lg md:text-xl font-bold text-primary">Analytics Dashboard</h3>
                 <MetricsPanel tasks={tasks} />
               </div>
             )}
 
             {/* Task Table */}
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                  <h3 className="text-xl font-bold text-primary">Action Item Repository</h3>
-                  <p className="text-sm text-muted-foreground">Manage and track your extracted tasks.</p>
+                  <h3 className="text-lg md:text-xl font-bold text-primary">Action Item Repository</h3>
+                  <p className="text-xs md:text-sm text-muted-foreground">Manage and track your extracted tasks.</p>
                 </div>
                 <div className="flex items-center space-x-2">
-                   <Button variant="outline" size="sm" onClick={handleShare} className="text-muted-foreground hover:text-primary">
+                   <Button variant="outline" size="sm" onClick={handleShare} className="text-muted-foreground hover:text-primary text-xs h-8">
                      <Share2 className="mr-2 h-4 w-4" />
                      Share
                    </Button>
                    <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm" className="text-muted-foreground hover:text-primary">
+                        <Button variant="outline" size="sm" className="text-muted-foreground hover:text-primary text-xs h-8">
                           <Download className="mr-2 h-4 w-4" />
                           Download
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleExport('json')}>Download as JSON</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleExport('csv')}>Download as CSV</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleExport('pdf')}>Download as PDF</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleExport('json')}>JSON</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleExport('csv')}>CSV</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleExport('pdf')}>PDF</DropdownMenuItem>
                       </DropdownMenuContent>
                    </DropdownMenu>
                 </div>
               </div>
-              <TaskTable tasks={tasks as any} db={db!} userId={user?.uid || ''} />
+              <div className="bg-white dark:bg-card rounded-xl border shadow-sm overflow-hidden">
+                <TaskTable tasks={tasks as any} db={db!} userId={user?.uid || ''} />
+              </div>
             </div>
           </div>
         </div>

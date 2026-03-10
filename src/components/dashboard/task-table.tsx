@@ -59,10 +59,10 @@ export function TaskTable({ tasks, db, userId }: TaskTableProps) {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'HIGH': return 'bg-red-100 text-red-700 border-red-200';
-      case 'MEDIUM': return 'bg-amber-100 text-amber-700 border-amber-200';
-      case 'LOW': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-      default: return 'bg-gray-100 text-gray-700';
+      case 'HIGH': return 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800/50';
+      case 'MEDIUM': return 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800/50';
+      case 'LOW': return 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800/50';
+      default: return 'bg-gray-100 text-gray-700 dark:bg-gray-800/50 dark:text-gray-400';
     }
   };
 
@@ -110,7 +110,7 @@ export function TaskTable({ tasks, db, userId }: TaskTableProps) {
 
   if (tasks.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-muted-foreground bg-white rounded-xl border border-dashed">
+      <div className="flex flex-col items-center justify-center py-16 px-4 text-center text-muted-foreground bg-white dark:bg-card rounded-xl border border-dashed">
         <div className="bg-secondary p-4 rounded-full mb-4">
           <Calendar className="h-8 w-8 text-primary/40" />
         </div>
@@ -121,54 +121,54 @@ export function TaskTable({ tasks, db, userId }: TaskTableProps) {
   }
 
   return (
-    <div className="rounded-xl border bg-white overflow-hidden shadow-sm">
-      <Table>
-        <TableHeader className="bg-secondary/30">
+    <div className="w-full overflow-x-auto scrollbar-hide">
+      <Table className="min-w-[800px] md:min-w-full">
+        <TableHeader className="bg-secondary/30 dark:bg-secondary/10">
           <TableRow>
-            <TableHead className="w-[50px]"></TableHead>
-            <TableHead>Task Description</TableHead>
+            <TableHead className="w-[40px] px-2"></TableHead>
+            <TableHead className="min-w-[250px]">Task Description</TableHead>
             <TableHead>Owner</TableHead>
             <TableHead>Deadline</TableHead>
             <TableHead>Priority</TableHead>
-            <TableHead>Confidence</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead className="hidden md:table-cell">Confidence</TableHead>
+            <TableHead className="text-right pr-4">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {tasks.map((task) => (
             <TableRow key={task.id} className={cn("group transition-colors", task.status === 'completed' && "opacity-60 grayscale-[0.5]")}>
-              <TableCell>
+              <TableCell className="px-2">
                 <Checkbox 
                   checked={task.status === 'completed'} 
                   onCheckedChange={() => handleToggleComplete(task.id, task.status)}
                   className="rounded-full"
                 />
               </TableCell>
-              <TableCell className="font-medium max-w-md">
-                <span className={cn(task.status === 'completed' && "line-through")}>
+              <TableCell className="font-medium">
+                <span className={cn("text-sm line-clamp-2", task.status === 'completed' && "line-through")}>
                   {task.description}
                 </span>
               </TableCell>
               <TableCell>
-                <div className="flex items-center text-sm">
+                <div className="flex items-center text-xs whitespace-nowrap">
                   <User className="mr-2 h-3 w-3 text-muted-foreground" />
                   {task.owner}
                 </div>
               </TableCell>
               <TableCell>
-                <div className="flex items-center text-sm text-muted-foreground">
+                <div className="flex items-center text-xs text-muted-foreground whitespace-nowrap">
                   <Calendar className="mr-2 h-3 w-3" />
-                  {task.deadline || 'No deadline'}
+                  {task.deadline || 'None'}
                 </div>
               </TableCell>
               <TableCell>
-                <Badge variant="outline" className={cn("font-bold uppercase text-[10px]", getPriorityColor(task.priority))}>
+                <Badge variant="outline" className={cn("font-bold uppercase text-[9px] px-1.5 py-0", getPriorityColor(task.priority))}>
                   {task.priority}
                 </Badge>
               </TableCell>
-              <TableCell>
+              <TableCell className="hidden md:table-cell">
                 <div className="flex items-center space-x-2">
-                  <div className="h-1.5 w-12 bg-secondary rounded-full overflow-hidden">
+                  <div className="h-1 w-10 bg-secondary rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-accent" 
                       style={{ width: `${task.confidenceScore}%` }}
@@ -179,10 +179,10 @@ export function TaskTable({ tasks, db, userId }: TaskTableProps) {
                   </span>
                 </div>
               </TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-right pr-4">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Button variant="ghost" size="icon" className="h-7 w-7">
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>

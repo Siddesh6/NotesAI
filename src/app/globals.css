@@ -24,7 +24,7 @@
     --border: 276 20% 90%;
     --input: 276 20% 90%;
     --ring: 276 50% 35%;
-    --radius: 0.75rem;
+    --radius: 1rem;
     --chart-1: 276 50% 35%;
     --chart-2: 240 80% 60%;
     --chart-3: 280 65% 55%;
@@ -33,21 +33,21 @@
   }
 
   .dark {
-    --background: 222 47% 7%;
+    --background: 222 47% 4%;
     --foreground: 213 31% 91%;
-    --card: 222 47% 10%;
+    --card: 222 47% 7%;
     --card-foreground: 213 31% 91%;
     --popover: 222 47% 8%;
     --popover-foreground: 213 31% 91%;
     --primary: 263 70% 65%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 217 33% 15%;
+    --secondary: 217 33% 12%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217 33% 15%;
     --muted-foreground: 215 20% 65%;
     --accent: 217 91% 60%;
     --accent-foreground: 210 40% 98%;
-    --destructive: 0 63% 31%;
+    --destructive: 0 75% 50%;
     --destructive-foreground: 210 40% 98%;
     --border: 217 33% 15%;
     --input: 217 33% 15%;
@@ -60,9 +60,28 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground font-body;
+    @apply bg-background text-foreground font-body antialiased selection:bg-primary/20;
+    /* Optimized for mobile tap delay and scrolling */
+    -webkit-tap-highlight-color: transparent;
+    text-rendering: optimizeLegibility;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-headline font-bold tracking-tight;
+  }
+}
+
+/* Custom horizontal scrollbar for mobile tables */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Tap targets for mobile */
+@media (max-width: 640px) {
+  .btn-mobile-large {
+    @apply h-12 px-6 text-base;
   }
 }
