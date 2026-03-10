@@ -13,7 +13,7 @@ export default function LandingPage() {
       <header className="px-4 lg:px-6 h-16 flex items-center border-b bg-white/50 backdrop-blur-md sticky top-0 z-50">
         <Link className="flex items-center justify-center space-x-2" href="/">
           <div className="bg-primary rounded-lg p-1.5">
-            <Zap className="h-5 w-5 text-white" />
+            < Zap className="h-5 w-5 text-white" />
           </div>
           <span className="font-headline font-bold text-xl tracking-tight text-primary">NotesAI</span>
         </Link>
@@ -138,7 +138,7 @@ export default function LandingPage() {
             <div className="space-y-4">
               <h4 className="text-sm font-bold uppercase tracking-wider text-primary">Created By</h4>
               <div className="flex flex-col space-y-2">
-                <span className="text-sm font-bold text-foreground">Developer</span>
+                <span className="text-sm font-bold text-foreground">Siddesh B</span>
                 <p className="text-xs text-muted-foreground">Building the future of meeting productivity.</p>
                 <div className="flex space-x-4 pt-2">
                   <Link href="mailto:siddeshb.contact@gmail.com" className="text-muted-foreground hover:text-primary transition-colors">
