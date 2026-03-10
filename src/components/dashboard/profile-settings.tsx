@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { doc, Firestore } from 'firebase/firestore';
 import { updateDocumentNonBlocking, useAuth } from '@/firebase';
 import { sendPasswordResetEmail } from 'firebase/auth';
@@ -18,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Settings, Loader2, Key, Image as ImageIcon } from 'lucide-react';
+import { User, Settings, Loader2, Key, Upload, Camera } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ProfileSettingsProps {
@@ -33,6 +32,7 @@ export function ProfileSettings({ db, userId, currentProfile }: ProfileSettingsP
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSendingReset, setIsSendingReset] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const auth = useAuth();
 
@@ -42,6 +42,41 @@ export function ProfileSettings({ db, userId, currentProfile }: ProfileSettingsP
       setPhotoURL(currentProfile.photoURL || '');
     }
   }, [currentProfile]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please select an image file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Limit file size to ~1MB for Firestore string storage
+    if (file.size > 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Please select an image smaller than 1MB.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const result = event.target?.result as string;
+      setPhotoURL(result);
+      toast({
+        title: "Photo selected",
+        description: "Click 'Save Changes' to update your profile photo.",
+      });
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSave = () => {
     if (!displayName.trim()) {
@@ -58,7 +93,7 @@ export function ProfileSettings({ db, userId, currentProfile }: ProfileSettingsP
     
     updateDocumentNonBlocking(userRef, {
       displayName: displayName.trim(),
-      photoURL: photoURL.trim(),
+      photoURL: photoURL,
       updatedAt: new Date().toISOString(),
     });
 
@@ -111,13 +146,39 @@ export function ProfileSettings({ db, userId, currentProfile }: ProfileSettingsP
         </DialogHeader>
         <div className="grid gap-6 py-4">
           <div className="flex flex-col items-center justify-center space-y-4">
-            <Avatar className="h-24 w-24 border-2 border-primary/20">
-              <AvatarImage src={photoURL} alt={displayName} />
-              <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
-                {displayName?.charAt(0) || currentProfile?.email?.charAt(0)}
-              </AvatarFallback>
-            </Avatar>
-            <p className="text-xs text-muted-foreground">Preview</p>
+            <div className="relative group">
+              <Avatar className="h-24 w-24 border-2 border-primary/20">
+                <AvatarImage src={photoURL} alt={displayName} className="object-cover" />
+                <AvatarFallback className="bg-primary/10 text-primary text-2xl font-bold">
+                  {displayName?.charAt(0) || currentProfile?.email?.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <Camera className="h-6 w-6 text-white" />
+              </button>
+            </div>
+            <div className="flex flex-col items-center gap-2">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept="image/*"
+                className="hidden"
+              />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => fileInputRef.current?.click()}
+                className="h-8 text-xs"
+              >
+                <Upload className="mr-2 h-3 w-3" />
+                Change Photo
+              </Button>
+              <p className="text-[10px] text-muted-foreground italic">Recommended: Square image, max 1MB</p>
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -130,20 +191,6 @@ export function ProfileSettings({ db, userId, currentProfile }: ProfileSettingsP
                 className="col-span-3"
                 placeholder="Full name"
               />
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="photo" className="text-right">Photo URL</Label>
-              <div className="col-span-3 relative">
-                <Input
-                  id="photo"
-                  value={photoURL}
-                  onChange={(e) => setPhotoURL(e.target.value)}
-                  placeholder="https://example.com/photo.jpg"
-                  className="pr-10"
-                />
-                <ImageIcon className="absolute right-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
-              </div>
             </div>
 
             <div className="grid grid-cols-4 items-center gap-4">
