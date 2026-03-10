@@ -1,55 +1,78 @@
 
-"use client";
+'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useAuth, useFirestore, useUser, useCollection, useMemoFirebase } from '@/firebase';
+import { collection, doc, query, orderBy, serverTimestamp, setDoc } from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { 
   Zap, 
-  FileText, 
-  Loader2, 
-  CheckCircle2, 
-  User, 
-  Calendar, 
+  LogOut, 
+  LayoutDashboard, 
   Clock, 
-  LayoutDashboard,
-  LogOut,
-  ChevronRight,
-  ClipboardList
+  ClipboardList, 
+  Download, 
+  FileText,
+  Plus,
+  ArrowUpRight,
+  Share2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-
-type TaskStatus = 'pending' | 'completed';
-type Priority = 'HIGH' | 'MEDIUM' | 'LOW';
-
-interface ActionItem {
-  task_description: string;
-  owner: string;
-  deadline?: string;
-  priority: Priority;
-  priority_score: number;
-  status?: TaskStatus;
-}
-
-const STEPS = [
-  "INPUT_RECEIVED",
-  "PARSING_TRANSCRIPT",
-  "TASK_EXTRACTION",
-  "ENTITY_DETECTION",
-  "PRIORITY_SCORING",
-  "RUN_COMPLETE"
-];
+import { TaskTable } from '@/components/dashboard/task-table';
+import { MetricsPanel } from '@/components/dashboard/metrics-panel';
+import { LogsViewer } from '@/components/dashboard/logs-viewer';
+import { addDocumentNonBlocking } from '@/firebase';
 
 export default function Dashboard() {
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
+  const db = useFirestore();
+  const router = useRouter();
+  const { toast } = useToast();
+
   const [transcript, setTranscript] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [step, setStep] = useState(0);
-  const [results, setResults] = useState<ActionItem[] | null>(null);
-  const { toast } = useToast();
+  const [activeStep, setActiveStep] = useState('');
+  const [currentRunId, setCurrentRunId] = useState<string | null>(null);
+
+  // Firestore Data Subscriptions
+  const tasksQuery = useMemoFirebase(() => {
+    if (!db || !user?.uid) return null;
+    return query(collection(db, 'users', user.uid, 'tasks'), orderBy('createdAt', 'desc'));
+  }, [db, user?.uid]);
+  
+  const { data: tasks = [] } = useCollection(tasksQuery);
+
+  const logsQuery = useMemoFirebase(() => {
+    if (!db || !user?.uid || !currentRunId) return null;
+    return query(collection(db, 'users', user.uid, 'runs', currentRunId, 'logEvents'), orderBy('timestamp', 'asc'));
+  }, [db, user?.uid, currentRunId]);
+
+  const { data: logs = [] } = useCollection(logsQuery);
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
+
+  const createLog = (runId: string, type: string, message: string, details?: string) => {
+    if (!user?.uid) return;
+    const logId = crypto.randomUUID();
+    const logRef = doc(db, 'users', user.uid, 'runs', runId, 'logEvents', logId);
+    setDoc(logRef, {
+      id: logId,
+      runId,
+      userId: user.uid,
+      eventType: type,
+      message,
+      details,
+      timestamp: new Date().toISOString()
+    });
+  };
 
   const handleExtract = async () => {
     if (!transcript.trim()) {
@@ -61,84 +84,159 @@ export default function Dashboard() {
       return;
     }
 
-    setIsProcessing(true);
-    setResults(null);
-    setStep(0);
+    if (!user?.uid) return;
 
-    // Simulate state machine progress for UI effect
-    const interval = setInterval(() => {
-      setStep(s => {
-        if (s < STEPS.length - 2) return s + 1;
-        return s;
-      });
-    }, 800);
+    setIsProcessing(true);
+    const runId = crypto.randomUUID();
+    setCurrentRunId(runId);
+    
+    // Create Run document
+    const runRef = doc(db, 'users', user.uid, 'runs', runId);
+    await setDoc(runRef, {
+      id: runId,
+      userId: user.uid,
+      startedAt: new Date().toISOString(),
+      status: 'PENDING',
+      transcript
+    });
+
+    const STEPS = ["INPUT_RECEIVED", "PARSING_TRANSCRIPT", "TASK_EXTRACTION", "ENTITY_DETECTION", "PRIORITY_SCORING", "RUN_COMPLETE"];
 
     try {
+      for (let i = 0; i < STEPS.length - 1; i++) {
+        const step = STEPS[i];
+        setActiveStep(step);
+        createLog(runId, 'STATE_TRANSITION', `Moving to state: ${step}`);
+        await new Promise(r => setTimeout(r, 600)); // Simulate processing latency
+      }
+
       const response = await fetch('/api/extract', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript, userId: 'mock-user-123' }),
+        body: JSON.stringify({ transcript, userId: user.uid }),
       });
 
       if (!response.ok) throw new Error('Failed to process');
 
       const data = await response.json();
-      setResults(data.tasks);
-      setStep(STEPS.length - 1);
-      toast({
-        title: "Success",
-        description: `Extracted ${data.tasks.length} action items.`,
+      
+      // Save results to Firestore
+      data.tasks.forEach((task: any) => {
+        const taskId = crypto.randomUUID();
+        const taskRef = doc(db, 'users', user?.uid!, 'tasks', taskId);
+        setDoc(taskRef, {
+          id: taskId,
+          userId: user?.uid!,
+          transcriptId: runId,
+          description: task.task_description,
+          owner: task.owner,
+          deadline: task.deadline || '',
+          priority: task.priority,
+          priorityScore: task.priority_score,
+          confidenceScore: task.confidence_score,
+          status: 'pending',
+          sourceSentence: task.task_description,
+          createdAt: new Date().toISOString()
+        });
       });
-    } catch (err) {
+
+      setActiveStep('RUN_COMPLETE');
+      createLog(runId, 'INFO', `Run completed successfully. Extracted ${data.tasks.length} tasks.`);
+      
+      await setDoc(runRef, {
+        completedAt: new Date().toISOString(),
+        status: 'COMPLETED',
+        totalTasksExtracted: data.tasks.length
+      }, { merge: true });
+
+      toast({
+        title: "Extraction Complete",
+        description: `Successfully extracted ${data.tasks.length} tasks.`,
+      });
+    } catch (err: any) {
+      createLog(runId, 'ERROR', `Run failed: ${err.message}`);
       toast({
         title: "Error",
         description: "Something went wrong during extraction.",
         variant: "destructive"
       });
     } finally {
-      clearInterval(interval);
       setIsProcessing(false);
     }
   };
 
-  const getPriorityColor = (priority: Priority) => {
-    switch (priority) {
-      case 'HIGH': return 'bg-red-100 text-red-700 border-red-200';
-      case 'MEDIUM': return 'bg-amber-100 text-amber-700 border-amber-200';
-      case 'LOW': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-      default: return 'bg-gray-100 text-gray-700';
-    }
+  const handleDemo = () => {
+    setTranscript(`John will finalize the UI design by Friday. Sarah will prepare the budget report tomorrow. Alex will contact suppliers this week.`);
   };
 
+  const handleSignOut = () => {
+    auth.signOut();
+    router.push('/');
+  };
+
+  const handleExport = (format: string) => {
+    const data = JSON.stringify(tasks, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tasks-export-${new Date().toISOString()}.${format}`;
+    a.click();
+    toast({ title: "Export Started", description: `Exporting tasks as ${format.toUpperCase()}` });
+  };
+
+  if (isUserLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Zap className="h-8 w-8 text-primary animate-pulse" />
+      </div>
+    );
+  }
+
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex h-screen bg-secondary/10 overflow-hidden">
       {/* Sidebar */}
-      <aside className="w-64 border-r bg-white hidden md:flex flex-col">
-        <div className="p-6 border-b flex items-center space-x-2">
-          <div className="bg-primary rounded-lg p-1.5">
+      <aside className="w-64 border-r bg-white hidden md:flex flex-col shadow-sm">
+        <div className="p-6 border-b flex items-center space-x-3">
+          <div className="bg-primary rounded-xl p-2 shadow-lg shadow-primary/20">
             <Zap className="h-5 w-5 text-white" />
           </div>
-          <span className="font-headline font-bold text-xl text-primary">NotesAI</span>
+          <span className="font-headline font-bold text-xl text-primary tracking-tight">NotesAI</span>
         </div>
-        <nav className="flex-1 p-4 space-y-2">
-          <Button variant="ghost" className="w-full justify-start text-primary bg-secondary/50" asChild>
+        <nav className="flex-1 p-4 space-y-2 mt-4">
+          <Button variant="ghost" className="w-full justify-start bg-secondary/50 text-primary font-semibold" asChild>
             <div className="flex items-center">
-              <LayoutDashboard className="mr-2 h-4 w-4" />
-              Extractor
+              <LayoutDashboard className="mr-3 h-4 w-4" />
+              Overview
             </div>
           </Button>
-          <Button variant="ghost" className="w-full justify-start hover:bg-secondary/30">
-            <ClipboardList className="mr-2 h-4 w-4" />
-            My Tasks
+          <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:bg-secondary/30">
+            <ClipboardList className="mr-3 h-4 w-4" />
+            Active Tasks
           </Button>
-          <Button variant="ghost" className="w-full justify-start hover:bg-secondary/30">
-            <Clock className="mr-2 h-4 w-4" />
-            History
+          <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:bg-secondary/30">
+            <Clock className="mr-3 h-4 w-4" />
+            Run History
           </Button>
         </nav>
-        <div className="p-4 border-t">
-          <Button variant="ghost" className="w-full justify-start text-muted-foreground hover:text-destructive">
-            <LogOut className="mr-2 h-4 w-4" />
+        <div className="p-4 border-t mt-auto">
+          <div className="bg-secondary/20 p-4 rounded-xl mb-4">
+             <div className="flex items-center mb-2">
+                <div className="h-8 w-8 rounded-full bg-accent text-white flex items-center justify-center font-bold text-xs mr-3">
+                  {user?.displayName?.charAt(0) || user?.email?.charAt(0)}
+                </div>
+                <div className="overflow-hidden">
+                   <p className="text-xs font-bold text-primary truncate">{user?.displayName || 'User'}</p>
+                   <p className="text-[10px] text-muted-foreground truncate">{user?.email}</p>
+                </div>
+             </div>
+          </div>
+          <Button 
+            variant="ghost" 
+            onClick={handleSignOut}
+            className="w-full justify-start text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+          >
+            <LogOut className="mr-3 h-4 w-4" />
             Sign Out
           </Button>
         </div>
@@ -146,157 +244,142 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-16 border-b bg-white flex items-center justify-between px-8">
-          <h2 className="text-xl font-headline font-bold text-primary">Action Item Extractor</h2>
-          <div className="flex items-center space-x-4">
-             <div className="flex -space-x-2">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="h-8 w-8 rounded-full border-2 border-white bg-secondary flex items-center justify-center overflow-hidden">
-                    <img src={`https://picsum.photos/seed/${i + 10}/32/32`} alt="user" />
-                  </div>
-                ))}
-             </div>
+        <header className="h-16 border-b bg-white flex items-center justify-between px-8 shadow-sm z-10">
+          <div className="flex items-center space-x-2">
+            <h2 className="text-lg font-headline font-bold text-primary">Workspace</h2>
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium text-muted-foreground">Action Item Extractor</span>
+          </div>
+          <div className="flex items-center space-x-3">
+             <DropdownMenu>
+               <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="border-accent text-accent hover:bg-accent/5">
+                    <Download className="mr-2 h-4 w-4" />
+                    Export Tasks
+                  </Button>
+               </DropdownMenuTrigger>
+               <DropdownMenuContent align="end">
+                 <DropdownMenuItem onClick={() => handleExport('json')}>Export as JSON</DropdownMenuItem>
+                 <DropdownMenuItem onClick={() => handleExport('csv')}>Export as CSV</DropdownMenuItem>
+                 <DropdownMenuItem onClick={() => handleExport('pdf')}>Export as PDF</DropdownMenuItem>
+                 <DropdownMenuItem onClick={() => toast({ title: "Jira Export", description: "Format prepared for Jira import."})}>Export for Jira</DropdownMenuItem>
+                 <DropdownMenuItem onClick={() => toast({ title: "Trello Export", description: "Format prepared for Trello import."})}>Export for Trello</DropdownMenuItem>
+               </DropdownMenuContent>
+             </DropdownMenu>
+             <Button size="sm" className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20">
+                <Plus className="mr-2 h-4 w-4" />
+                New Run
+             </Button>
           </div>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-8 space-y-8">
-          {!results && (
-            <Card className="max-w-4xl mx-auto border-none shadow-xl shadow-primary/5">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <FileText className="mr-2 h-5 w-5 text-accent" />
-                  Submit Meeting Transcript
-                </CardTitle>
-                <CardDescription>
-                  Paste your meeting notes or a full transcript below to extract structured tasks.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Textarea
-                  placeholder="Rahul will prepare the presentation by Monday. We need to finalize the budget by next Friday. Sarah is responsible for the vendor outreach..."
-                  className="min-h-[300px] resize-none focus-visible:ring-accent font-body"
-                  value={transcript}
-                  onChange={(e) => setTranscript(e.target.value)}
-                  disabled={isProcessing}
-                />
-              </CardContent>
-              <CardFooter className="flex justify-between items-center bg-secondary/20 py-4">
-                <p className="text-xs text-muted-foreground italic">
-                  Tip: Specific mentions of names and dates improve accuracy.
-                </p>
-                <Button 
-                  onClick={handleExtract} 
-                  disabled={isProcessing || !transcript.trim()}
-                  className="bg-accent hover:bg-accent/90"
-                >
-                  {isProcessing ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing Pipeline...
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="mr-2 h-4 w-4" />
-                      Extract Action Items
-                    </>
-                  )}
-                </Button>
-              </CardFooter>
-            </Card>
-          )}
-
-          {isProcessing && (
-            <div className="max-w-4xl mx-auto space-y-4">
-              <div className="flex justify-between items-end mb-2">
-                <h3 className="text-sm font-semibold text-primary uppercase tracking-wider">
-                  Workflow State: {STEPS[step].replace(/_/g, ' ')}
-                </h3>
-                <span className="text-xs font-mono text-muted-foreground">
-                  {Math.round((step / (STEPS.length - 1)) * 100)}%
-                </span>
-              </div>
-              <Progress value={(step / (STEPS.length - 1)) * 100} className="h-2 bg-secondary" />
-              <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
-                {STEPS.map((s, i) => (
-                  <div 
-                    key={s} 
-                    className={cn(
-                      "text-[10px] p-2 rounded border text-center transition-all",
-                      i <= step ? "bg-accent text-white border-accent" : "bg-white text-muted-foreground border-border"
-                    )}
-                  >
-                    {s.split('_')[0]}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {results && (
-            <div className="max-w-6xl mx-auto space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-headline font-bold text-primary">Extracted Results</h2>
-                  <p className="text-muted-foreground">Found {results.length} tasks from your transcript.</p>
+        <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-secondary/5">
+          <div className="max-w-7xl mx-auto space-y-8">
+            
+            {/* Input Section */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+              <div className="xl:col-span-2 space-y-4">
+                <div className="flex items-center justify-between mb-2">
+                   <div>
+                      <h3 className="text-xl font-bold text-primary">New Transcript</h3>
+                      <p className="text-sm text-muted-foreground">Paste your meeting notes to extract structured tasks.</p>
+                   </div>
+                   <Button variant="ghost" size="sm" onClick={handleDemo} className="text-accent hover:text-accent hover:bg-accent/10">
+                      Try Demo Text
+                   </Button>
                 </div>
-                <Button variant="outline" onClick={() => { setResults(null); setTranscript(''); }} className="border-accent text-accent hover:bg-accent/5">
-                  Process New Transcript
-                </Button>
+                <div className="relative group">
+                  <Textarea
+                    placeholder="Rahul will prepare the presentation by Monday. We need to finalize the budget by next Friday. Sarah is responsible for the vendor outreach..."
+                    className="min-h-[220px] resize-none focus-visible:ring-accent font-body bg-white border-none shadow-xl shadow-primary/5 p-6 rounded-2xl"
+                    value={transcript}
+                    onChange={(e) => setTranscript(e.target.value)}
+                    disabled={isProcessing}
+                  />
+                  <div className="absolute bottom-4 right-4 flex space-x-2">
+                    <Button 
+                      onClick={handleExtract} 
+                      disabled={isProcessing || !transcript.trim()}
+                      className="bg-accent hover:bg-accent/90 shadow-lg shadow-accent/20 rounded-xl px-6"
+                    >
+                      {isProcessing ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="mr-2 h-4 w-4" />
+                          Run Extraction
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                {results.map((task, idx) => (
-                  <Card key={idx} className="group hover:shadow-lg transition-all border-l-4 border-l-primary/10 overflow-hidden">
-                    <CardContent className="p-6">
-                      <div className="flex justify-between items-start gap-4">
-                        <div className="flex-1 space-y-3">
-                          <h4 className="font-semibold text-lg leading-snug group-hover:text-primary transition-colors">
-                            {task.task_description}
-                          </h4>
-                          
-                          <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                            <div className="flex items-center">
-                              <User className="mr-1.5 h-4 w-4 text-accent" />
-                              <span className="font-medium text-foreground">{task.owner}</span>
-                            </div>
-                            {task.deadline && (
-                              <div className="flex items-center">
-                                <Calendar className="mr-1.5 h-4 w-4 text-accent" />
-                                <span>{task.deadline}</span>
-                              </div>
-                            )}
+              <div className="xl:col-span-1">
+                 <div className="bg-white rounded-2xl p-6 shadow-xl shadow-primary/5 h-full border border-border/50">
+                    <h3 className="font-bold text-primary mb-4 flex items-center">
+                       <Clock className="mr-2 h-4 w-4 text-accent" />
+                       Quick Stats
+                    </h3>
+                    <div className="space-y-6">
+                       <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Recent Accuracy</span>
+                          <span className="text-sm font-bold text-emerald-500">98.2%</span>
+                       </div>
+                       <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Tasks this week</span>
+                          <span className="text-sm font-bold text-primary">24</span>
+                       </div>
+                       <div className="pt-4 border-t">
+                          <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mb-3">AI Engine Health</p>
+                          <div className="flex space-x-1.5">
+                             {[1, 2, 3, 4, 5, 6, 7].map(i => (
+                                <div key={i} className="flex-1 h-8 bg-emerald-100 rounded-sm flex items-center justify-center">
+                                   <div className="h-4 w-0.5 bg-emerald-500 opacity-50" />
+                                </div>
+                             ))}
                           </div>
-                        </div>
-
-                        <div className="flex flex-col items-end gap-2">
-                          <Badge variant="outline" className={cn("px-2.5 py-0.5 font-bold uppercase text-[10px]", getPriorityColor(task.priority))}>
-                            {task.priority}
-                          </Badge>
-                          <div className="flex flex-col items-end">
-                            <span className="text-[10px] text-muted-foreground uppercase font-semibold">Priority Score</span>
-                            <span className="text-sm font-mono font-bold text-accent">{task.priority_score}%</span>
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                    <div className="h-1.5 w-full bg-secondary">
-                      <div 
-                        className="h-full bg-accent" 
-                        style={{ width: `${task.priority_score}%` }}
-                      />
+                          <p className="text-[10px] text-emerald-600 font-medium mt-2">All systems operational</p>
+                       </div>
                     </div>
-                  </Card>
-                ))}
-              </div>
-              
-              <div className="pt-8 flex justify-center">
-                <Button size="lg" className="bg-primary hover:bg-primary/90 px-12 shadow-xl shadow-primary/20">
-                  <CheckCircle2 className="mr-2 h-5 w-5" />
-                  Save Tasks to My List
-                </Button>
+                 </div>
               </div>
             </div>
-          )}
+
+            {/* Workflow Visualization */}
+            {isProcessing || activeStep === 'RUN_COMPLETE' ? (
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex items-center justify-between">
+                   <h3 className="text-xl font-bold text-primary">Execution Pipeline</h3>
+                   <span className="text-xs font-mono text-muted-foreground">RUN_ID: {currentRunId?.slice(0, 8)}</span>
+                </div>
+                <LogsViewer logs={logs} activeStep={activeStep} />
+              </div>
+            ) : null}
+
+            {/* Metrics Dashboard */}
+            {tasks.length > 0 && (
+              <div className="space-y-6">
+                <h3 className="text-xl font-bold text-primary">Analytics Dashboard</h3>
+                <MetricsPanel tasks={tasks} />
+              </div>
+            )}
+
+            {/* Task Table */}
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-bold text-primary">Action Item Repository</h3>
+                <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                   <Share2 className="h-3 w-3" />
+                   <span>Updated {new Date().toLocaleTimeString()}</span>
+                </div>
+              </div>
+              <TaskTable tasks={tasks as any} db={db} userId={user?.uid || ''} />
+            </div>
+          </div>
         </div>
       </main>
     </div>
